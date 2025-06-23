@@ -1,0 +1,96 @@
+<nav class="navbar navbar-expand-lg navbar-dark bg-primary shadow-sm">
+  <div class="container">
+    <a class="navbar-brand" href="#">Gestão de Processos</a>
+    <button class="btn btn-outline-light" (click)="logout()">Sair</button>
+  </div>
+</nav>
+
+<main class="container mt-4">
+  <div *ngIf="isLoading" class="text-center mt-5">
+    <div class="spinner-border text-primary" role="status">
+      <span class="visually-hidden">A carregar...</span>
+    </div>
+  </div>
+
+  <div *ngIf="!isLoading && stats">
+    <div class="row mb-4">
+      <div class="col-lg-4 col-md-6 mb-4">
+        <div class="card text-center shadow-sm h-100">
+          <div class="card-body">
+            <h5 class="card-title">Total de Processos</h5>
+            <p class="fs-1 fw-bold">{{ stats.totalProcesses }}</p>
+          </div>
+        </div>
+      </div>
+      <div class="col-lg-4 col-md-6 mb-4">
+        <div class="card text-center text-white bg-warning shadow-sm h-100">
+          <div class="card-body">
+            <h5 class="card-title">Prazos a Vencer (7 dias)</h5>
+            <p class="fs-1 fw-bold">{{ stats.upcomingDeadlines }}</p>
+          </div>
+        </div>
+      </div>
+      <div class="col-lg-4 col-md-12 mb-4">
+        <div class="card text-center shadow-sm h-100">
+          <div class="card-body d-flex flex-column justify-content-center">
+            <h5 class="card-title">Ações Rápidas</h5>
+            <div>
+              <a routerLink="/processes" class="btn btn-primary"
+                >Ver Processos</a
+              >
+              <button
+                *ngIf="authService.isGestorOrAdmin()"
+                (click)="navigateToReports()"
+                class="btn btn-info"
+              >
+                Relatório
+              </button>
+              <a
+                routerLink="/admin/users"
+                class="btn btn-outline-secondary ms-2"
+                >Gerir Utilizadores</a
+              >
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="col-md-8 mb-4">
+        <div class="card shadow-sm">
+          <div class="card-header">Processos por Status</div>
+          <div class="card-body">
+            <canvas id="processesByStatusChart"></canvas>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-4 mb-4">
+        <div class="card h-100 shadow-sm">
+          <div class="card-body d-flex flex-column text-center">
+            <h5 class="card-title">Chat</h5>
+            <p class="card-text flex-grow-1">
+              Converse em tempo real com outros Militares do sistema para
+              agilizar os processos.
+            </p>
+
+            <div class="position-relative mt-auto">
+              <a routerLink="/chat" class="btn btn-outline-success">
+                Acessar Chat</a
+              >
+
+              <span
+                *ngIf="unreadChatCount$ | async as count"
+                [hidden]="count === 0"
+                class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger"
+              >
+                {{ count }}
+                <span class="visually-hidden">mensagens não lidas</span>
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</main>

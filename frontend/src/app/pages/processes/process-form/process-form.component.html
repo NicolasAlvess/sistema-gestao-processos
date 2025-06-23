@@ -1,0 +1,316 @@
+<!--
+ * ========================================================================
+ * FICHEIRO: frontend/src/app/pages/processes/process-form.component.html (VERSÃO FINAL E COMPLETA)
+ * ========================================================================
+ * - Este é o ficheiro completo do formulário, com a secção para
+ * Contacto e Endereço adicionada.
+-->
+<div class="container mt-4">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>Criar Novo Processo</h2>
+    <a routerLink="/processes" class="btn btn-secondary">Voltar para a Lista</a>
+  </div>
+
+  <div class="card shadow-sm">
+    <div class="card-body">
+      <form (ngSubmit)="onSubmit()" #processForm="ngForm">
+        <div *ngIf="successMessage" class="alert alert-success">
+          {{ successMessage }}
+        </div>
+        <div *ngIf="errorMessage" class="alert alert-danger">
+          {{ errorMessage }}
+        </div>
+
+        <div class="row">
+          <div class="col-md-6 mb-3">
+            <label for="process_number" class="form-label"
+              >Número do Processo <span class="text-danger">*</span></label
+            >
+            <input
+              type="text"
+              id="process_number"
+              name="process_number"
+              class="form-control"
+              [(ngModel)]="processData.process_number"
+              required
+            />
+          </div>
+          <div class="col-md-6 mb-3">
+            <label for="type" class="form-label"
+              >Tipo do Processo <span class="text-danger">*</span></label
+            >
+            <select
+              id="type"
+              name="type"
+              class="form-select"
+              [(ngModel)]="processData.type"
+              required
+            >
+              <option value="PAS">
+                PAS (Processo Administrativo Sancionador)
+              </option>
+              <option value="PACCR">
+                PACCR (Processo de Cancelamento de CR)
+              </option>
+            </select>
+          </div>
+        </div>
+
+        <ng-container *ngIf="processData.type === 'PAS'">
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label for="portaria" class="form-label"
+                >Nº da Portaria de Instauração</label
+              >
+              <input
+                type="text"
+                id="portaria"
+                name="portaria"
+                class="form-control"
+                [(ngModel)]="processData.portaria_instauracao"
+              />
+            </div>
+            <div class="col-md-6 mb-3">
+              <label for="encarregado" class="form-label"
+                >Encarregado do Processo (Opcional)</label
+              >
+              <select
+                id="encarregado"
+                name="encarregado"
+                class="form-select"
+                [(ngModel)]="processData.encarregado_user_id"
+              >
+                <option [ngValue]="null">Nenhum</option>
+                <option *ngFor="let user of users" [value]="user.id">
+                  {{ user.name }}
+                </option>
+              </select>
+            </div>
+          </div>
+        </ng-container>
+
+        <ng-container *ngIf="processData.type === 'PACCR'">
+          <div class="p-3 mb-3 border rounded bg-light">
+            <h5 class="mb-3 text-muted">
+              Dados do Processo de Cancelamento de CR
+            </h5>
+
+            <div class="mb-3">
+              <label for="boletim_ocorrencia" class="form-label"
+                >Número do Boletim de Ocorrência</label
+              >
+              <input
+                type="text"
+                id="boletim_ocorrencia"
+                name="boletim_ocorrencia"
+                class="form-control"
+                [(ngModel)]="processData.boletim_ocorrencia"
+              />
+            </div>
+
+            <div class="mb-3">
+              <label for="inquerito_policial" class="form-label"
+                >Número do Inquérito Policial (IP)</label
+              >
+              <input
+                type="text"
+                id="inquerito_policial"
+                name="inquerito_policial"
+                class="form-control"
+                [(ngModel)]="processData.inquerito_policial"
+              />
+            </div>
+
+            <div class="mb-3">
+              <label for="numero_oficio" class="form-label"
+                >Número do Ofício</label
+              >
+              <input
+                type="text"
+                id="numero_oficio"
+                name="numero_oficio"
+                class="form-control"
+                [(ngModel)]="processData.numero_oficio"
+              />
+            </div>
+          </div>
+        </ng-container>
+
+        <div class="mb-3">
+          <label for="interested_party" class="form-label"
+            >Nome do Administrado / Empresa
+            <span class="text-danger">*</span></label
+          >
+          <input
+            type="text"
+            id="interested_party"
+            name="interested_party"
+            class="form-control"
+            [(ngModel)]="processData.interested_party"
+            required
+          />
+        </div>
+
+        <!-- ✨ ========================================================== ✨ -->
+        <!-- ✨ NOVA SECÇÃO DE ENDEREÇO E CONTACTO ✨ -->
+        <!-- ✨ ========================================================== ✨ -->
+        <div class="p-3 mb-3 border rounded">
+          <h5 class="mb-3 text-muted">Contacto e Endereço (Opcional)</h5>
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label for="email" class="form-label">Email</label>
+              <input
+                type="email"
+                id="email"
+                name="email"
+                class="form-control"
+                [(ngModel)]="processData.email"
+              />
+            </div>
+            <div class="col-md-6 mb-3">
+              <label for="telefone" class="form-label">Telefone</label>
+              <input
+                type="text"
+                id="telefone"
+                name="telefone"
+                class="form-control"
+                [(ngModel)]="processData.telefone"
+              />
+            </div>
+          </div>
+          <div class="row">
+            <div class="col-md-4 mb-3">
+              <label for="cep" class="form-label">CEP</label>
+              <input
+                type="text"
+                id="cep"
+                name="cep"
+                class="form-control"
+                [(ngModel)]="processData.cep"
+                (blur)="onCepBlur($event)"
+              />
+            </div>
+            <div class="col-md-8 mb-3">
+              <label for="logradouro" class="form-label">Logradouro</label>
+              <input
+                type="text"
+                id="logradouro"
+                name="logradouro"
+                class="form-control"
+                [(ngModel)]="processData.logradouro"
+              />
+            </div>
+          </div>
+          <div class="row">
+            <div class="col-md-4 mb-3">
+              <label for="numero" class="form-label">Número</label>
+              <input
+                type="text"
+                id="numero"
+                name="numero"
+                class="form-control"
+                [(ngModel)]="processData.numero"
+              />
+            </div>
+            <div class="col-md-8 mb-3">
+              <label for="complemento" class="form-label">Complemento</label>
+              <input
+                type="text"
+                id="complemento"
+                name="complemento"
+                class="form-control"
+                [(ngModel)]="processData.complemento"
+              />
+            </div>
+          </div>
+          <div class="row">
+            <div class="col-md-5 mb-3">
+              <label for="bairro" class="form-label">Bairro</label>
+              <input
+                type="text"
+                id="bairro"
+                name="bairro"
+                class="form-control"
+                [(ngModel)]="processData.bairro"
+              />
+            </div>
+            <div class="col-md-5 mb-3">
+              <label for="cidade" class="form-label">Cidade</label>
+              <input
+                type="text"
+                id="cidade"
+                name="cidade"
+                class="form-control"
+                [(ngModel)]="processData.cidade"
+              />
+            </div>
+            <div class="col-md-2 mb-3">
+              <label for="estado" class="form-label">Estado</label>
+              <input
+                type="text"
+                id="estado"
+                name="estado"
+                class="form-control"
+                [(ngModel)]="processData.estado"
+              />
+            </div>
+          </div>
+        </div>
+        <!-- =============================================================== -->
+
+        <div class="row">
+          <div class="col-md-6 mb-3">
+            <label for="cr" class="form-label"
+              >CR (Certificado de Registro)</label
+            >
+            <input
+              type="text"
+              id="cr"
+              name="cr"
+              class="form-control"
+              [(ngModel)]="processData.cr"
+            />
+          </div>
+          <div class="col-md-6 mb-3">
+            <label for="cpf_cnpj" class="form-label">CPF / CNPJ</label>
+            <input
+              type="text"
+              id="cpf_cnpj"
+              name="cpf_cnpj"
+              class="form-control"
+              [(ngModel)]="processData.cpf_cnpj"
+            />
+          </div>
+        </div>
+
+        <div class="mb-3">
+          <label for="reason" class="form-label"
+            >Motivo do Processo <span class="text-danger">*</span></label
+          >
+          <textarea
+            id="reason"
+            name="reason"
+            class="form-control"
+            rows="4"
+            [(ngModel)]="processData.reason"
+            required
+          ></textarea>
+        </div>
+
+        <div class="d-flex justify-content-end">
+          <button
+            type="submit"
+            class="btn btn-primary"
+            [disabled]="!processForm.valid || isSubmitting"
+          >
+            <span
+              *ngIf="isSubmitting"
+              class="spinner-border spinner-border-sm"
+            ></span>
+            <span *ngIf="!isSubmitting">Salvar Processo</span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

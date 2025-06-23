@@ -1,0 +1,128 @@
+<!--
+ * ========================================================================
+ * FICHEIRO: frontend/src/app/pages/chat/chat.component.html (Completo)
+ * ========================================================================
+ * - O `<span>` de notificação agora exibe o número de mensagens não lidas
+ * a partir do Map `unreadCounts`.
+-->
+<div class="d-flex vh-100">
+  <!-- Coluna da Esquerda: Lista de Utilizadores -->
+  <div
+    class="d-flex flex-column flex-shrink-0 p-3 bg-light border-end"
+    style="width: 280px"
+  >
+    <div
+      class="d-flex align-items-center mb-3 mb-md-0 me-md-auto link-dark text-decoration-none"
+    >
+      <span class="fs-5">Conversas</span>
+    </div>
+    <hr />
+    <ul class="nav nav-pills flex-column mb-auto">
+      <li *ngIf="isLoadingUsers" class="nav-item px-2">
+        A carregar utilizadores...
+      </li>
+      <li *ngFor="let user of users" class="nav-item">
+        <!-- LINK ATUALIZADO COM O CONTADOR DE NOTIFICAÇÃO -->
+        <a
+          href="#"
+          class="nav-link link-dark d-flex justify-content-between align-items-center"
+          [class.active]="selectedUser?.id === user.id"
+          (click)="selectUser(user); $event.preventDefault()"
+        >
+          <span>
+            {{ user.posto_graduacao }} {{ user.nome_de_guerra || user.name }}
+          </span>
+          <!-- O badge só aparece se houver mensagens não lidas deste utilizador -->
+          <span
+            *ngIf="unreadCounts.has(user.id)"
+            class="badge bg-danger rounded-pill"
+          >
+            {{ unreadCounts.get(user.id) }}
+          </span>
+        </a>
+      </li>
+    </ul>
+    <hr />
+    <a routerLink="/dashboard" class="btn btn-outline-secondary"
+      >Voltar ao Dashboard</a
+    >
+  </div>
+
+  <!-- Coluna da Direita: Chat Ativo (sem alterações) -->
+  <div class="d-flex flex-column flex-grow-1">
+    <div *ngIf="selectedUser" class="p-3 border-bottom bg-white shadow-sm">
+      <h5 class="mb-0">
+        {{ selectedUser.posto_graduacao }}
+        {{ selectedUser.nome_de_guerra || selectedUser.name }}
+      </h5>
+    </div>
+
+    <div
+      class="flex-grow-1 p-3"
+      style="overflow-y: auto; background-color: #f8f9fa"
+      #messageContainer
+    >
+      <div
+        *ngIf="!selectedUser"
+        class="d-flex h-100 justify-content-center align-items-center"
+      >
+        <p class="text-muted">
+          Selecione um Militar para iniciar uma conversa.
+        </p>
+      </div>
+
+      <div *ngIf="selectedUser">
+        <div *ngFor="let msg of activeConversationMessages" class="mb-3">
+          <div *ngIf="!msg.isMe" class="d-flex justify-content-start">
+            <div class="card" style="max-width: 70%">
+              <div class="card-body p-2 px-3">
+                <p class="card-subtitle text-muted small mb-1">
+                  {{ msg.senderName }}
+                </p>
+                <p class="card-text mb-1">{{ msg.text }}</p>
+                <p class="card-text text-end small text-muted mb-0">
+                  {{ msg.time | date : "HH:mm" }}
+                </p>
+              </div>
+            </div>
+          </div>
+          <div *ngIf="msg.isMe" class="d-flex justify-content-end">
+            <div class="card bg-primary text-white" style="max-width: 70%">
+              <div class="card-body p-2 px-3">
+                <p class="card-text mb-1">{{ msg.text }}</p>
+                <p class="card-text text-end small opacity-75 mb-0">
+                  {{ msg.time | date : "HH:mm" }}
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div *ngIf="selectedUser" class="p-3 bg-light border-top">
+      <form (ngSubmit)="sendMessage()">
+        <div class="input-group">
+          <input
+            type="text"
+            class="form-control"
+            placeholder="Escreva uma mensagem para {{
+              selectedUser.nome_de_guerra || selectedUser.name
+            }}..."
+            [(ngModel)]="newMessage"
+            name="newMessage"
+            autofocus
+            (keyup.enter)="sendMessage()"
+          />
+          <button
+            class="btn btn-primary"
+            type="submit"
+            [disabled]="newMessage.trim() === ''"
+          >
+            Enviar
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

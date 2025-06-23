@@ -1,0 +1,974 @@
+<!--
+ * ========================================================================
+ * FICHEIRO: frontend/src/app/pages/processes/process-detail/process-detail.component.html (VERSÃO FINAL E COMPLETA)
+ * ========================================================================
+ * - Corrigido o layout de exibição dos campos de contacto (Email e Telefone)
+ * para que fiquem alinhados na mesma linha.
+-->
+<div class="container mt-4">
+  <div *ngIf="!isLoading && process">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+      <h3>Detalhes do Processo</h3>
+      <div>
+        <a
+          *ngIf="authService.isGestorOrAdmin()"
+          [routerLink]="['/processes', process.id, 'report']"
+          class="btn btn-success me-2"
+          >Gerar Relatório</a
+        >
+        <button
+          *ngIf="authService.isAuxiliarOrAbove()"
+          type="button"
+          class="btn btn-primary me-2"
+          data-bs-toggle="modal"
+          data-bs-target="#notificationModal"
+        >
+          Editar Notificações
+        </button>
+        <a routerLink="/processes" class="btn btn-secondary"
+          >Voltar para a Lista</a
+        >
+      </div>
+    </div>
+
+    <div *ngIf="successMessage" class="alert alert-success">
+      {{ successMessage }}
+    </div>
+    <div *ngIf="errorMessage" class="alert alert-danger">
+      {{ errorMessage }}
+    </div>
+
+    <div class="row">
+      <div class="col-lg-8">
+        <div class="card shadow-sm mb-4">
+          <div class="card-header d-flex justify-content-between">
+            <h5 class="mb-0">Nº do Processo: {{ process.process_number }}</h5>
+            <span
+              class="badge"
+              [ngClass]="{
+                'bg-primary': process.type === 'PAS',
+                'bg-success': process.type === 'PACCR'
+              }"
+            >
+              {{ process.type === "PAS" ? "PAS" : "PACCR" }}
+            </span>
+          </div>
+          <div class="card-body">
+            <p><strong>Interessado:</strong> {{ process.interested_party }}</p>
+            <p>
+              <strong>CPF/CNPJ:</strong>
+              {{ process.cpf_cnpj || "Não informado" }}
+            </p>
+            <p>
+              <strong>CR (Certificado de Registro):</strong>
+              {{ process.cr || "Não informado" }}
+            </p>
+
+            <ng-container *ngIf="process.type === 'PACCR'">
+              <p *ngIf="process.boletim_ocorrencia">
+                <strong>Boletim de Ocorrência:</strong>
+                {{ process.boletim_ocorrencia }}
+              </p>
+              <p *ngIf="process.inquerito_policial">
+                <strong>Inquérito Policial (IP):</strong>
+                {{ process.inquerito_policial }}
+              </p>
+              <p *ngIf="process.numero_oficio">
+                <strong>Número do Ofício:</strong> {{ process.numero_oficio }}
+              </p>
+            </ng-container>
+
+            <!-- ✨ ========================================================== ✨ -->
+            <!-- ✨ SECÇÃO DE CONTACTO E ENDEREÇO COM LAYOUT CORRIGIDO ✨ -->
+            <!-- ✨ ========================================================== ✨ -->
+            <ng-container *ngIf="process.email || process.telefone">
+              <hr />
+              <div class="row">
+                <div class="col-md-6" *ngIf="process.email">
+                  <p class="mb-1">
+                    <strong>Email:</strong> {{ process.email }}
+                  </p>
+                </div>
+                <div class="col-md-6" *ngIf="process.telefone">
+                  <p class="mb-1">
+                    <strong>Telefone:</strong> {{ process.telefone }}
+                  </p>
+                </div>
+              </div>
+            </ng-container>
+
+            <ng-container *ngIf="process.cep">
+              <hr />
+              <p>
+                <strong>Endereço:</strong><br />
+                {{ process.logradouro }}, {{ process.numero }}
+                <span *ngIf="process.complemento"
+                  >{{ process.complemento }}
+                </span>
+                {{ process.bairro }} - {{ process.cidade }}/{{ process.estado
+                }}<br />
+                CEP: {{ process.cep }}
+              </p>
+            </ng-container>
+            <!-- =============================================================== -->
+
+            <hr />
+            <p><strong>Motivo do Processo:</strong></p>
+            <p class="text-muted" style="white-space: pre-wrap">
+              {{ process.reason }}
+            </p>
+          </div>
+        </div>
+
+        <div *ngIf="process.type === 'PACCR'" class="card shadow-sm mb-4">
+          <div class="card-header">
+            <h5 class="mb-0">Acervo de Armas do Administrado</h5>
+          </div>
+          <div class="card-body">
+            <h6>Resumo do Acervo</h6>
+            <div class="row text-center mb-4">
+              <div class="col">
+                <div class="stat-box">
+                  <div class="fs-4 fw-bold">{{ firearmSummary.total }}</div>
+                  <div class="text-muted small">Total</div>
+                </div>
+              </div>
+              <div class="col">
+                <div class="stat-box">
+                  <div class="fs-4 fw-bold text-success">
+                    {{ firearmSummary.ok }}
+                  </div>
+                  <div class="text-muted small">OK</div>
+                </div>
+              </div>
+              <div class="col">
+                <div class="stat-box">
+                  <div class="fs-4 fw-bold text-warning">
+                    {{ firearmSummary.apprehended }}
+                  </div>
+                  <div class="text-muted small">Apreendidas</div>
+                </div>
+              </div>
+              <div class="col">
+                <div class="stat-box">
+                  <div class="fs-4 fw-bold text-danger">
+                    {{ firearmSummary.stolen }}
+                  </div>
+                  <div class="text-muted small">Roubadas</div>
+                </div>
+              </div>
+            </div>
+            <hr />
+
+            <h6>Armas Registadas</h6>
+            <ul class="list-group list-group-flush mb-4">
+              <li
+                *ngIf="!process.firearms || process.firearms.length === 0"
+                class="list-group-item fst-italic"
+              >
+                Nenhuma arma registada para este processo.
+              </li>
+              <li
+                *ngFor="let firearm of process.firearms"
+                class="list-group-item d-flex justify-content-between align-items-center"
+              >
+                <div>
+                  <span class="fw-bold">{{ firearm.model }}</span> ({{
+                    firearm.caliber
+                  }})<br />
+                  <small class="text-muted"
+                    >Nº de Série: {{ firearm.serial_number }}</small
+                  >
+                </div>
+                <span
+                  class="badge"
+                  [ngClass]="{
+                    'bg-success': firearm.status === 'OK',
+                    'bg-warning text-dark': firearm.status === 'Apreendida',
+                    'bg-danger': firearm.status === 'Roubada'
+                  }"
+                >
+                  {{ firearm.status }}
+                </span>
+              </li>
+            </ul>
+
+            <ng-container *ngIf="authService.isAuxiliarOrAbove()">
+              <hr />
+              <h6>Adicionar Nova Arma</h6>
+              <form (ngSubmit)="onAddFirearm()" #firearmForm="ngForm">
+                <div class="row">
+                  <div class="col-md-6 mb-3">
+                    <label for="serial_number" class="form-label"
+                      >Nº de Série</label
+                    >
+                    <input
+                      type="text"
+                      class="form-control"
+                      id="serial_number"
+                      name="serial_number"
+                      [(ngModel)]="newFirearm.serial_number"
+                      required
+                    />
+                  </div>
+                  <div class="col-md-6 mb-3">
+                    <label for="model" class="form-label">Modelo</label>
+                    <input
+                      type="text"
+                      class="form-control"
+                      id="model"
+                      name="model"
+                      [(ngModel)]="newFirearm.model"
+                      required
+                    />
+                  </div>
+                </div>
+                <div class="row">
+                  <div class="col-md-6 mb-3">
+                    <label for="caliber" class="form-label">Calibre</label>
+                    <input
+                      type="text"
+                      class="form-control"
+                      id="caliber"
+                      name="caliber"
+                      [(ngModel)]="newFirearm.caliber"
+                      required
+                    />
+                  </div>
+                  <div class="col-md-6 mb-3">
+                    <label for="status" class="form-label">Status</label>
+                    <select
+                      class="form-select"
+                      id="status"
+                      name="status"
+                      [(ngModel)]="newFirearm.status"
+                      required
+                    >
+                      <option value="OK">OK</option>
+                      <option value="Apreendida">Apreendida</option>
+                      <option value="Roubada">Roubada</option>
+                    </select>
+                  </div>
+                </div>
+                <div class="d-flex justify-content-end">
+                  <button
+                    type="submit"
+                    class="btn btn-primary"
+                    [disabled]="!firearmForm.valid"
+                  >
+                    Adicionar Arma
+                  </button>
+                </div>
+              </form>
+            </ng-container>
+          </div>
+        </div>
+
+        <div
+          *ngIf="process.final_solution_publication_date"
+          class="card shadow-sm mb-4 border-success"
+        >
+          <div class="card-header bg-success text-white">
+            <h5 class="mb-0">Dados da Solução Final</h5>
+          </div>
+          <div class="card-body">
+            <p class="mb-2">
+              <strong>Data de Publicação:</strong>
+              {{
+                process.final_solution_publication_date
+                  | date : "dd/MM/yyyy" : "UTC"
+              }}
+            </p>
+            <p class="mb-2">
+              <strong>Nº do Boletim:</strong>
+              {{ process.final_solution_bulletin_number }}
+            </p>
+
+            <div *ngIf="finalSolutionDocument">
+              <hr />
+              <p class="mb-0">
+                <strong>Documento da Solução:</strong>
+                <a
+                  href="#"
+                  (click)="
+                    downloadDocument(finalSolutionDocument);
+                    $event.preventDefault()
+                  "
+                  class="ms-2"
+                >
+                  <i class="fas fa-file-pdf me-1"></i
+                  >{{ finalSolutionDocument.file_name }}
+                </a>
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div class="card shadow-sm mb-4">
+          <div class="card-header">
+            <h5 class="mb-0">Documentos do Processo</h5>
+          </div>
+          <div class="card-body">
+            <h6>Documentos Anexados</h6>
+            <ul class="list-group list-group-flush mb-3">
+              <li
+                *ngIf="!process.documents || process.documents.length === 0"
+                class="list-group-item fst-italic"
+              >
+                Nenhum documento anexado.
+              </li>
+              <li
+                *ngFor="let doc of process.documents"
+                class="list-group-item d-flex justify-content-between align-items-center"
+              >
+                <div>
+                  <a
+                    href="#"
+                    (click)="downloadDocument(doc); $event.preventDefault()"
+                    >{{ doc.file_name }}</a
+                  >
+                  <br /><small class="text-muted"
+                    >Tipo: {{ doc.document_type }}</small
+                  >
+                </div>
+                <button
+                  *ngIf="authService.isGestorOrAdmin()"
+                  class="btn btn-sm btn-outline-danger"
+                  (click)="deleteDocument(doc.id)"
+                >
+                  Eliminar
+                </button>
+              </li>
+            </ul>
+
+            <ng-container *ngIf="authService.isAuxiliarOrAbove()">
+              <hr />
+              <h6>Anexar Novo Documento</h6>
+              <form (ngSubmit)="onUploadDocument()">
+                <div class="mb-3">
+                  <label for="documentType" class="form-label"
+                    >Tipo do Documento</label
+                  >
+                  <select
+                    id="documentType"
+                    name="documentType"
+                    class="form-select"
+                    [(ngModel)]="documentUpload.type"
+                    required
+                  >
+                    <option [ngValue]="null" disabled>
+                      Selecione um tipo...
+                    </option>
+                    <option value="notificacao_alegacoes_iniciais">
+                      Notificação de Alegações Iniciais
+                    </option>
+                    <option value="comprovativo_recebimento_1">
+                      Comprovativo de Recebimento (1ª Not.)
+                    </option>
+                    <option value="defesa_previa">
+                      Defesa Prévia / Alegações Iniciais
+                    </option>
+                    <option value="notificacao_alegacoes_finais">
+                      Notificação de Alegações Finais
+                    </option>
+                    <option value="comprovativo_recebimento_2">
+                      Comprovativo de Recebimento (2ª Not.)
+                    </option>
+                    <option value="alegacoes_finais">Alegações Finais</option>
+                    <option value="outro">Outro</option>
+                  </select>
+                </div>
+                <div class="mb-3">
+                  <label for="fileUpload" class="form-label"
+                    >Selecionar Ficheiro</label
+                  >
+                  <input
+                    class="form-control"
+                    type="file"
+                    id="fileUpload"
+                    (change)="onFileSelected($event)"
+                    required
+                  />
+                </div>
+                <div class="d-flex justify-content-end">
+                  <button
+                    type="submit"
+                    class="btn btn-primary"
+                    [disabled]="!selectedFile || !documentUpload.type"
+                  >
+                    Anexar Documento
+                  </button>
+                </div>
+              </form>
+            </ng-container>
+          </div>
+        </div>
+
+        <div
+          *ngIf="process && process.status !== 'arquivado'"
+          class="card shadow-sm mb-4"
+        >
+          <div class="card-header">
+            <h5 class="mb-0">Finalizar Processo</h5>
+          </div>
+          <div class="card-body">
+            <form (ngSubmit)="submitFinalSolution()">
+              <div class="mb-3">
+                <label for="publicationDate" class="form-label"
+                  >Data de Publicação</label
+                >
+                <input
+                  type="date"
+                  class="form-control"
+                  id="publicationDate"
+                  name="publicationDate"
+                  [(ngModel)]="finalizationData.publicationDate"
+                  required
+                />
+              </div>
+
+              <div class="mb-3">
+                <label for="bulletinNumber" class="form-label"
+                  >Nº do Boletim de Acesso Restrito</label
+                >
+                <input
+                  type="text"
+                  class="form-control"
+                  id="bulletinNumber"
+                  name="bulletinNumber"
+                  [(ngModel)]="finalizationData.bulletinNumber"
+                  required
+                />
+              </div>
+
+              <div class="mb-3">
+                <label for="solutionFile" class="form-label"
+                  >Arquivo da Solução Final (PDF)</label
+                >
+                <input
+                  type="file"
+                  class="form-control"
+                  id="solutionFile"
+                  (change)="onFinalSolutionFileSelected($event)"
+                  accept=".pdf"
+                  required
+                />
+              </div>
+
+              <button
+                type="submit"
+                class="btn btn-success"
+                [disabled]="
+                  !finalizationData.solutionFile ||
+                  !finalizationData.publicationDate ||
+                  !finalizationData.bulletinNumber
+                "
+              >
+                <i class="fas fa-check-circle me-2"></i>Salvar Solução Final
+              </button>
+            </form>
+          </div>
+        </div>
+
+        <div class="card shadow-sm mb-4">
+          <div class="card-header">
+            <h5 class="mb-0">Histórico de Tramitação</h5>
+          </div>
+          <div class="card-body">
+            <ul class="list-group list-group-flush">
+              <li
+                *ngIf="!process.history || process.history.length === 0"
+                class="list-group-item"
+              >
+                Nenhum histórico de tramitação encontrado.
+              </li>
+              <li
+                *ngFor="let item of process.history"
+                class="list-group-item d-flex justify-content-between align-items-start"
+              >
+                <div class="ms-2 me-auto">
+                  <div class="fw-bold">
+                    Status alterado para "{{ item.to_status }}"
+                  </div>
+                  <small class="text-muted"
+                    >Por: {{ item.user_name || "Sistema" }} <br />Nota:
+                    {{ item.notes }}</small
+                  >
+                </div>
+                <span class="badge bg-light text-dark rounded-pill">{{
+                  item.change_date | date : "dd/MM/yyyy HH:mm"
+                }}</span>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-lg-4">
+        <div class="card shadow-sm mb-4">
+          <div class="card-body">
+            <h5 class="card-title">Status Atual</h5>
+            <p class="fs-4">
+              <span class="badge bg-info text-dark">{{ process.status }}</span>
+            </p>
+          </div>
+        </div>
+
+        <div class="card shadow-sm mb-4">
+          <div
+            class="card-header d-flex justify-content-between align-items-center"
+          >
+            <h5 class="mb-0">Fase de Cumprimento</h5>
+            <button
+              *ngIf="
+                authService.isAuxiliarOrAbove() &&
+                (process.status === 'Aguardando prazo alegações finais' ||
+                  process.status === 'Aguardando solução do processo' ||
+                  process.status === 'arquivado')
+              "
+              type="button"
+              class="btn btn-sm btn-outline-primary py-0"
+              data-bs-toggle="modal"
+              data-bs-target="#closingDatesModal"
+            >
+              <i class="fas fa-edit"></i> Editar
+            </button>
+          </div>
+          <div class="card-body">
+            <small class="text-muted">Envio da Solução Final:</small>
+            <p>
+              {{
+                process.solution_sent_date
+                  ? (process.solution_sent_date | date : "dd/MM/yyyy" : "UTC")
+                  : "Pendente"
+              }}
+            </p>
+
+            <small class="text-muted">Recebimento da Solução Final:</small>
+            <p>
+              {{
+                process.solution_received_date
+                  ? (process.solution_received_date
+                    | date : "dd/MM/yyyy" : "UTC")
+                  : "Pendente"
+              }}
+            </p>
+            <hr />
+
+            <ng-container *ngIf="process.type === 'PAS'">
+              <small class="text-muted">Envio da GRU:</small>
+              <p>
+                {{
+                  process.gru_sent_date
+                    ? (process.gru_sent_date | date : "dd/MM/yyyy" : "UTC")
+                    : "Pendente"
+                }}
+              </p>
+
+              <small class="text-muted">Recebimento da GRU:</small>
+              <p>
+                {{
+                  process.gru_received_date
+                    ? (process.gru_received_date | date : "dd/MM/yyyy" : "UTC")
+                    : "Pendente"
+                }}
+              </p>
+              <hr />
+              <small class="text-muted d-block"
+                >Prazo para Pagamento da GRU:</small
+              >
+              <p class="fw-bold fs-5 text-danger">
+                {{
+                  process.gru_payment_deadline
+                    ? (process.gru_payment_deadline
+                      | date : "dd/MM/yyyy" : "UTC")
+                    : "Não definido"
+                }}
+              </p>
+            </ng-container>
+
+            <ng-container *ngIf="process.type === 'PACCR'">
+              <small class="text-muted">Envio para Polícia Civil:</small>
+              <p>
+                {{
+                  process.pc_sent_date
+                    ? (process.pc_sent_date | date : "dd/MM/yyyy" : "UTC")
+                    : "Pendente"
+                }}
+              </p>
+
+              <small class="text-muted">Recebimento da Polícia Civil:</small>
+              <p>
+                {{
+                  process.pc_received_date
+                    ? (process.pc_received_date | date : "dd/MM/yyyy" : "UTC")
+                    : "Pendente"
+                }}
+              </p>
+            </ng-container>
+          </div>
+        </div>
+
+        <div class="card shadow-sm mb-4">
+          <div class="card-body">
+            <h5 class="card-title">Notificações</h5>
+            <hr />
+            <small class="text-muted">1ª Notificação Enviada:</small>
+            <p>
+              {{
+                process.notification1_sent_date
+                  ? (process.notification1_sent_date
+                    | date : "dd/MM/yyyy" : "UTC")
+                  : "Pendente"
+              }}
+            </p>
+            <small class="text-muted">1ª Notificação Recebida:</small>
+            <p>
+              {{
+                process.notification1_received_date
+                  ? (process.notification1_received_date
+                    | date : "dd/MM/yyyy" : "UTC")
+                  : "Pendente"
+              }}
+            </p>
+            <hr />
+            <small class="text-muted">2ª Notificação Enviada:</small>
+            <p>
+              {{
+                process.notification2_sent_date
+                  ? (process.notification2_sent_date
+                    | date : "dd/MM/yyyy" : "UTC")
+                  : "Pendente"
+              }}
+            </p>
+            <small class="text-muted">2ª Notificação Recebida:</small>
+            <p>
+              {{
+                process.notification2_received_date
+                  ? (process.notification2_received_date
+                    | date : "dd/MM/yyyy" : "UTC")
+                  : "Pendente"
+              }}
+            </p>
+          </div>
+        </div>
+
+        <div class="card shadow-sm mb-4">
+          <div class="card-body">
+            <h5 class="card-title">Prazos</h5>
+            <hr />
+            <small class="text-muted d-block">Prazo Alegações Iniciais:</small>
+            <p class="fw-bold">
+              {{
+                process.initial_statement_deadline
+                  ? (process.initial_statement_deadline
+                    | date : "dd/MM/yyyy" : "UTC")
+                  : "Não definido"
+              }}
+            </p>
+            <div
+              class="input-group input-group-sm mb-3"
+              *ngIf="process.notification1_received_date"
+            >
+              <input
+                type="number"
+                class="form-control"
+                placeholder="Prazo em dias"
+                [(ngModel)]="initialDeadlineDays"
+              />
+              <button
+                *ngIf="authService.isAuxiliarOrAbove()"
+                class="btn btn-outline-primary"
+                type="button"
+                (click)="setInitialDeadline()"
+              >
+                Definir
+              </button>
+            </div>
+            <small
+              *ngIf="!process.notification1_received_date"
+              class="form-text text-muted"
+              >Defina a data de recebimento da 1ª notificação para
+              calcular.</small
+            >
+            <hr />
+            <small class="text-muted d-block">Prazo Alegações Finais:</small>
+            <p class="fw-bold">
+              {{
+                process.final_statement_deadline
+                  ? (process.final_statement_deadline
+                    | date : "dd/MM/yyyy" : "UTC")
+                  : "Não definido"
+              }}
+            </p>
+            <div
+              class="input-group input-group-sm mb-3"
+              *ngIf="process.notification2_received_date"
+            >
+              <input
+                type="number"
+                class="form-control"
+                placeholder="Prazo em dias"
+                [(ngModel)]="finalDeadlineDays"
+              />
+              <button
+                *ngIf="authService.isAuxiliarOrAbove()"
+                class="btn btn-outline-primary"
+                type="button"
+                (click)="setFinalDeadline()"
+              >
+                Definir
+              </button>
+            </div>
+            <small
+              *ngIf="!process.notification2_received_date"
+              class="form-text text-muted"
+              >Defina a data de recebimento da 2ª notificação para
+              calcular.</small
+            >
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div
+    class="modal fade"
+    id="notificationModal"
+    tabindex="-1"
+    aria-labelledby="notificationModalLabel"
+    aria-hidden="true"
+  >
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="notificationModalLabel">
+            Editar Datas de Notificação
+          </h5>
+          <button
+            type="button"
+            class="btn-close"
+            data-bs-dismiss="modal"
+            aria-label="Close"
+          ></button>
+        </div>
+        <div class="modal-body">
+          <form (ngSubmit)="onSaveDates()">
+            <h5>1ª Notificação</h5>
+            <div class="row">
+              <div class="col-md-6 mb-3">
+                <label for="n1_sent" class="form-label">Data de Envio</label>
+                <input
+                  type="date"
+                  id="n1_sent"
+                  class="form-control"
+                  name="n1_sent"
+                  [(ngModel)]="notificationDates.notification1_sent_date"
+                />
+              </div>
+              <div class="col-md-6 mb-3">
+                <label for="n1_received" class="form-label"
+                  >Data de Recebimento</label
+                >
+                <input
+                  type="date"
+                  id="n1_received"
+                  class="form-control"
+                  name="n1_received"
+                  [(ngModel)]="notificationDates.notification1_received_date"
+                />
+              </div>
+            </div>
+            <hr />
+            <h5>2ª Notificação</h5>
+            <div class="row">
+              <div class="col-md-6 mb-3">
+                <label for="n2_sent" class="form-label">Data de Envio</label>
+                <input
+                  type="date"
+                  id="n2_sent"
+                  class="form-control"
+                  name="n2_sent"
+                  [(ngModel)]="notificationDates.notification2_sent_date"
+                />
+              </div>
+              <div class="col-md-6 mb-3">
+                <label for="n2_received" class="form-label"
+                  >Data de Recebimento</label
+                >
+                <input
+                  type="date"
+                  id="n2_received"
+                  class="form-control"
+                  name="n2_received"
+                  [(ngModel)]="notificationDates.notification2_received_date"
+                />
+              </div>
+            </div>
+            <div class="modal-footer mt-3">
+              <button
+                type="button"
+                class="btn btn-secondary"
+                data-bs-dismiss="modal"
+              >
+                Cancelar
+              </button>
+              <button
+                type="submit"
+                class="btn btn-primary"
+                data-bs-dismiss="modal"
+              >
+                Salvar Alterações
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div
+    class="modal fade"
+    id="closingDatesModal"
+    tabindex="-1"
+    aria-labelledby="closingDatesModalLabel"
+    aria-hidden="true"
+  >
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="closingDatesModalLabel">
+            Editar Datas de Cumprimento
+          </h5>
+          <button
+            type="button"
+            class="btn-close"
+            data-bs-dismiss="modal"
+            aria-label="Close"
+          ></button>
+        </div>
+        <div class="modal-body">
+          <form *ngIf="process" (ngSubmit)="onSaveClosingDates()">
+            <h5>Solução Final</h5>
+            <div class="row">
+              <div class="col-md-6 mb-3">
+                <label for="solution_sent_date" class="form-label"
+                  >Data de Envio</label
+                >
+                <input
+                  type="date"
+                  class="form-control"
+                  id="solution_sent_date"
+                  name="solution_sent_date"
+                  [(ngModel)]="closingDates.solution_sent_date"
+                />
+              </div>
+              <div class="col-md-6 mb-3">
+                <label for="solution_received_date" class="form-label"
+                  >Data de Recebimento</label
+                >
+                <input
+                  type="date"
+                  class="form-control"
+                  id="solution_received_date"
+                  name="solution_received_date"
+                  [(ngModel)]="closingDates.solution_received_date"
+                />
+              </div>
+            </div>
+            <hr />
+
+            <ng-container *ngIf="process.type === 'PAS'">
+              <h5>Guia de Recolhimento da União (GRU)</h5>
+              <div class="row">
+                <div class="col-md-6 mb-3">
+                  <label for="gru_sent_date" class="form-label"
+                    >Data de Envio</label
+                  >
+                  <input
+                    type="date"
+                    class="form-control"
+                    id="gru_sent_date"
+                    name="gru_sent_date"
+                    [(ngModel)]="closingDates.gru_sent_date"
+                  />
+                </div>
+                <div class="col-md-6 mb-3">
+                  <label for="gru_received_date" class="form-label"
+                    >Data de Recebimento</label
+                  >
+                  <input
+                    type="date"
+                    class="form-control"
+                    id="gru_received_date"
+                    name="gru_received_date"
+                    [(ngModel)]="closingDates.gru_received_date"
+                  />
+                </div>
+              </div>
+              <div class="mb-3">
+                <label for="gru_payment_deadline" class="form-label"
+                  >Prazo Final para Pagamento</label
+                >
+                <input
+                  type="date"
+                  class="form-control"
+                  id="gru_payment_deadline"
+                  name="gru_payment_deadline"
+                  [(ngModel)]="closingDates.gru_payment_deadline"
+                />
+              </div>
+            </ng-container>
+
+            <ng-container *ngIf="process.type === 'PACCR'">
+              <h5>Comunicação com a Polícia Civil</h5>
+              <div class="row">
+                <div class="col-md-6 mb-3">
+                  <label for="pc_sent_date" class="form-label"
+                    >Data de Envio</label
+                  >
+                  <input
+                    type="date"
+                    class="form-control"
+                    id="pc_sent_date"
+                    name="pc_sent_date"
+                    [(ngModel)]="closingDates.pc_sent_date"
+                  />
+                </div>
+                <div class="col-md-6 mb-3">
+                  <label for="pc_received_date" class="form-label"
+                    >Data de Recebimento</label
+                  >
+                  <input
+                    type="date"
+                    class="form-control"
+                    id="pc_received_date"
+                    name="pc_received_date"
+                    [(ngModel)]="closingDates.pc_received_date"
+                  />
+                </div>
+              </div>
+            </ng-container>
+
+            <div class="modal-footer mt-3">
+              <button
+                type="button"
+                class="btn btn-secondary"
+                data-bs-dismiss="modal"
+              >
+                Cancelar
+              </button>
+              <button
+                type="submit"
+                class="btn btn-primary"
+                data-bs-dismiss="modal"
+              >
+                Salvar Alterações
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

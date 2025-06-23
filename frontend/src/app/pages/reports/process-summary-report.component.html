@@ -1,0 +1,113 @@
+<!--
+ * ========================================================================
+ * FICHEIRO: frontend/src/app/pages/reports/process-summary-report.component.html (ATUALIZADO)
+ * ========================================================================
+ * - O template foi alterado para exibir uma lista detalhada de cada
+ * ação, mostrando o processo, o utilizador e a data.
+-->
+<div class="container mt-4">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>Relatório de Sumário de Processos</h2>
+    <a routerLink="/dashboard" class="btn btn-secondary">Voltar ao Dashboard</a>
+  </div>
+
+  <!-- ... (Mensagens de Carregamento e Erro) ... -->
+
+  <div *ngIf="!isLoading && !errorMessage && reportData" class="row">
+    <!-- Card de Processos Instaurados -->
+    <div class="col-lg-4 mb-4">
+      <div class="card shadow-sm h-100">
+        <div
+          class="card-header bg-primary text-white d-flex justify-content-between align-items-center"
+        >
+          <h5 class="mb-0">
+            <i class="fas fa-plus-circle me-2"></i>Processos Instaurados
+          </h5>
+          <span class="badge bg-light text-primary">{{
+            reportData.createdBy.length
+          }}</span>
+        </div>
+        <ul class="list-group list-group-flush">
+          <li
+            *ngIf="reportData.createdBy.length === 0"
+            class="list-group-item fst-italic"
+          >
+            Nenhum processo instaurado.
+          </li>
+          <li *ngFor="let item of reportData.createdBy" class="list-group-item">
+            <strong>Nº:</strong> {{ item.process_number }}<br />
+            <small class="text-muted"
+              >Por: {{ item.user_name }} em
+              {{ item.change_date | date : "dd/MM/yyyy HH:mm" }}</small
+            >
+          </li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- Card de Processos Arquivados -->
+    <div class="col-lg-4 mb-4">
+      <div class="card shadow-sm h-100">
+        <div
+          class="card-header bg-dark text-white d-flex justify-content-between align-items-center"
+        >
+          <h5 class="mb-0">
+            <i class="fas fa-archive me-2"></i>Processos Arquivados
+          </h5>
+          <span class="badge bg-light text-dark">{{
+            reportData.archivedBy.length
+          }}</span>
+        </div>
+        <ul class="list-group list-group-flush">
+          <li
+            *ngIf="reportData.archivedBy.length === 0"
+            class="list-group-item fst-italic"
+          >
+            Nenhum processo arquivado.
+          </li>
+          <li
+            *ngFor="let item of reportData.archivedBy"
+            class="list-group-item"
+          >
+            <strong>Nº:</strong> {{ item.process_number }}<br />
+            <small class="text-muted"
+              >Por: {{ item.user_name }} em
+              {{ item.change_date | date : "dd/MM/yyyy HH:mm" }}</small
+            >
+          </li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- Card de Processos Excluídos -->
+    <div class="col-lg-4 mb-4">
+      <div class="card shadow-sm h-100">
+        <div
+          class="card-header bg-danger text-white d-flex justify-content-between align-items-center"
+        >
+          <h5 class="mb-0">
+            <i class="fas fa-trash-alt me-2"></i>Processos Excluídos
+          </h5>
+          <span class="badge bg-light text-danger">{{
+            reportData.deletedBy.length
+          }}</span>
+        </div>
+        <ul class="list-group list-group-flush">
+          <li
+            *ngIf="reportData.deletedBy.length === 0"
+            class="list-group-item fst-italic"
+          >
+            Nenhuma exclusão registada.
+          </li>
+          <li *ngFor="let item of reportData.deletedBy" class="list-group-item">
+            <strong>Nº:</strong> {{ item.process_number }}<br />
+            <small class="text-muted"
+              >Por: {{ item.user_name }} em
+              {{ item.change_date | date : "dd/MM/yyyy HH:mm" }}</small
+            >
+          </li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>

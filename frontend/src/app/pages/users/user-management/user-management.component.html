@@ -1,0 +1,160 @@
+<!--
+ * ========================================================================
+ * FICHEIRO: frontend/src/app/pages/users/user-management/user-management.component.html
+ * ========================================================================
+ * - Adicionámos os campos 'Posto/Graduação', 'Nome de Guerra' e 'Confirmar Senha'.
+ * - A tabela de utilizadores agora exibe as novas informações.
+-->
+<div class="container mt-4">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>Gerenciamento de Utilizadores</h2>
+    <a routerLink="/dashboard" class="btn btn-secondary">Voltar ao Dashboard</a>
+  </div>
+
+  <div *ngIf="successMessage" class="alert alert-success">
+    {{ successMessage }}
+  </div>
+  <div *ngIf="errorMessage" class="alert alert-danger">{{ errorMessage }}</div>
+
+  <!-- Formulário de Cadastro -->
+  <div class="card mb-4">
+    <div class="card-header fw-bold">Cadastrar Novo Utilizador</div>
+    <div class="card-body">
+      <form (ngSubmit)="onRegisterSubmit()" #registerForm="ngForm">
+        <div class="row">
+          <div class="col-md-6 mb-3">
+            <label for="posto_graduacao" class="form-label"
+              >Posto/Graduação</label
+            >
+            <input
+              type="text"
+              id="posto_graduacao"
+              name="posto_graduacao"
+              class="form-control"
+              [(ngModel)]="newUser.posto_graduacao"
+            />
+          </div>
+          <div class="col-md-6 mb-3">
+            <label for="nome_de_guerra" class="form-label"
+              >Nome de Guerra</label
+            >
+            <input
+              type="text"
+              id="nome_de_guerra"
+              name="nome_de_guerra"
+              class="form-control"
+              [(ngModel)]="newUser.nome_de_guerra"
+            />
+          </div>
+        </div>
+        <div class="mb-3">
+          <label for="name" class="form-label">Nome Completo</label>
+          <input
+            type="text"
+            id="name"
+            name="name"
+            class="form-control"
+            [(ngModel)]="newUser.name"
+            required
+          />
+        </div>
+        <div class="mb-3">
+          <label for="email" class="form-label">Email</label>
+          <input
+            type="email"
+            id="email"
+            name="email"
+            class="form-control"
+            [(ngModel)]="newUser.email"
+            required
+            email
+          />
+        </div>
+        <div class="row">
+          <div class="col-md-6 mb-3">
+            <label for="password" class="form-label">Senha</label>
+            <input
+              type="password"
+              id="password"
+              name="password"
+              class="form-control"
+              [(ngModel)]="newUser.password"
+              required
+              minlength="4"
+            />
+          </div>
+          <div class="col-md-6 mb-3">
+            <label for="confirmPassword" class="form-label"
+              >Confirmar Senha</label
+            >
+            <input
+              type="password"
+              id="confirmPassword"
+              name="confirmPassword"
+              class="form-control"
+              [(ngModel)]="newUser.confirmPassword"
+              required
+            />
+          </div>
+        </div>
+        <div class="mb-3">
+          <label for="role" class="form-label">Perfil de Acesso</label>
+          <select
+            id="role"
+            name="role"
+            class="form-select"
+            [(ngModel)]="newUser.role"
+            required
+          >
+            <option *ngFor="let role of roles" [value]="role">
+              {{ formatRole(role) }}
+            </option>
+          </select>
+        </div>
+        <button
+          type="submit"
+          class="btn btn-primary"
+          [disabled]="
+            !registerForm.valid || newUser.password !== newUser.confirmPassword
+          "
+        >
+          Cadastrar Utilizador
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Tabela de Utilizadores -->
+  <div class="card">
+    <div class="card-header fw-bold">Utilizadores Cadastrados</div>
+    <div class="card-body">
+      <div class="table-responsive">
+        <table class="table table-striped table-hover">
+          <thead>
+            <tr>
+              <th>Posto/Graduação</th>
+              <th>Nome de Guerra</th>
+              <th>Nome Completo</th>
+              <th>Email</th>
+              <th>Perfil</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let user of users">
+              <td>{{ user.posto_graduacao || "N/A" }}</td>
+              <td>{{ user.nome_de_guerra || "N/A" }}</td>
+              <td>{{ user.name }}</td>
+              <td>{{ user.email }}</td>
+              <td>{{ formatRole(user.role) }}</td>
+            </tr>
+            <tr *ngIf="users.length === 0">
+              <td colspan="5" class="text-center">
+                Nenhum utilizador encontrado.
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>

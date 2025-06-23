@@ -1,0 +1,274 @@
+<link
+  rel="stylesheet"
+  href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css"
+  integrity="sha512-1ycn6IcaQQ40/MKBW2W4Rhis/DbILU74C1vSrLJxCq57o941Ym01SwNsOMqvEBFlcgUa6xLiPY/NS5R+E6ztJQ=="
+  crossorigin="anonymous"
+  referrerpolicy="no-referrer"
+/>
+<div class="container mt-4">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>Lista de Processos</h2>
+
+    <div>
+      <a
+        *ngIf="authService.isGestorOrAdmin()"
+        routerLink="/processes/new"
+        class="btn btn-primary me-2"
+        >Criar Novo Processo</a
+      >
+
+      <a routerLink="/dashboard" class="btn btn-secondary"
+        >Voltar ao Dashboard</a
+      >
+    </div>
+  </div>
+
+  <div class="card shadow-sm mb-4">
+    <div class="card-body">
+      <form (ngSubmit)="applyFilters()">
+        <div class="row g-3">
+          <div class="col-md-4">
+            <label for="searchTerm" class="form-label">Pesquisar</label>
+
+            <input
+              type="text"
+              id="searchTerm"
+              class="form-control"
+              placeholder="Nº do processo ou interessado..."
+              [(ngModel)]="filters.searchTerm"
+              name="searchTerm"
+            />
+          </div>
+
+          <div class="col-md-3">
+            <label for="statusFilter" class="form-label">Status</label>
+
+            <select
+              id="statusFilter"
+              class="form-select"
+              [(ngModel)]="filters.status"
+              name="statusFilter"
+            >
+              <option value="">Todos</option>
+
+              <option *ngFor="let status of statusOptions" [value]="status">
+                {{ status }}
+              </option>
+            </select>
+          </div>
+
+          <div class="col-md-2">
+            <label for="typeFilter" class="form-label">Tipo</label>
+            <select
+              id="typeFilter"
+              class="form-select"
+              [(ngModel)]="filters.type"
+              name="typeFilter"
+            >
+              <option value="">Todos</option>
+
+              <option *ngFor="let type of typeOptions" [value]="type">
+                {{ type }}
+              </option>
+            </select>
+          </div>
+
+          <div class="col-md-3">
+            <label for="sortBy" class="form-label">Ordenar por</label>
+
+            <select
+              id="sortBy"
+              class="form-select"
+              [(ngModel)]="filters.sortBy"
+              name="sortBy"
+            >
+              <option value="creation_desc">Mais Recentes</option>
+
+              <option value="deadline_asc">Prazo Mais Próximo</option>
+            </select>
+          </div>
+        </div>
+        <div class="row mt-3">
+          <div class="col-12 d-flex justify-content-end">
+            <button
+              type="submit"
+              class="btn btn-primary"
+              style="min-width: 100px"
+            >
+              Filtrar
+            </button>
+            <button
+              type="button"
+              class="btn btn-outline-secondary ms-2"
+              style="min-width: 100px"
+              (click)="clearFilters()"
+            >
+              Limpar
+            </button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div *ngIf="isLoading" class="text-center">
+    <div class="spinner-border text-primary" role="status">
+      <span class="visually-hidden">A carregar...</span>
+    </div>
+
+    <p class="mt-2">A carregar processos...</p>
+  </div>
+
+  <div *ngIf="errorMessage" class="alert alert-danger">
+    {{ errorMessage }}
+  </div>
+
+  <div *ngIf="!isLoading && !errorMessage" class="card shadow-sm">
+    <div class="card-body">
+      <div class="table-responsive">
+        <table class="table table-hover align-middle">
+          <thead class="table-light">
+            <tr>
+              <th>Nº do Processo / Tipo</th>
+
+              <th>Interessado</th>
+
+              <th>Status</th>
+
+              <th>Próximo Prazo</th>
+
+              <th style="width: 150px">Ações</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            <tr *ngFor="let process of processes">
+              <td>
+                {{ process.process_number }}<br /><small class="text-muted">{{
+                  process.type
+                }}</small>
+              </td>
+
+              <td>{{ process.interested_party }}</td>
+
+              <td>
+                <span class="badge" [ngClass]="getStatusBadgeClass(process)">
+                  {{ process.status }}
+                </span>
+              </td>
+
+              <td>
+                <ng-container *ngIf="getNextDeadline(process) as deadline">
+                  <span
+                    [ngClass]="getDeadlineClass(getDaysRemaining(deadline))"
+                  >
+                    {{ deadline | date : "dd/MM/yyyy" : "UTC" }}
+                  </span>
+
+                  <span
+                    *ngIf="
+                      getDaysRemaining(deadline) !== null &&
+                      getDaysRemaining(deadline)! < 0
+                    "
+                    class="badge bg-danger ms-2"
+                    >VENCIDO</span
+                  >
+
+                  <span
+                    *ngIf="
+                      getDaysRemaining(deadline) !== null &&
+                      getDaysRemaining(deadline)! >= 0 &&
+                      getDaysRemaining(deadline)! <= 7
+                    "
+                    class="badge bg-warning text-dark ms-2"
+                    >A VENCER</span
+                  >
+                </ng-container>
+
+                <ng-container *ngIf="!getNextDeadline(process)">
+                  <span class="text-muted fst-italic">N/A</span>
+                </ng-container>
+              </td>
+
+              <td>
+                <div class="btn-group" role="group">
+                  <a
+                    [routerLink]="['/processes', process.id]"
+                    class="btn btn-sm btn-outline-secondary"
+                    title="Ver Detalhes"
+                    ><i class="fas fa-eye"></i
+                  ></a>
+                  <a
+                    *ngIf="authService.isGestorOrAdmin()"
+                    [routerLink]="['/processes/edit', process.id]"
+                    class="btn btn-sm btn-outline-primary"
+                    title="Editar"
+                    ><i class="fas fa-edit"></i
+                  ></a>
+                  <button
+                    *ngIf="authService.isGestorOrAdmin()"
+                    (click)="deleteProcess(process.id)"
+                    class="btn btn-sm btn-outline-danger"
+                    title="Excluir"
+                  >
+                    <i class="fas fa-trash-alt"></i>
+                  </button>
+                </div>
+              </td>
+            </tr>
+
+            <tr *ngIf="processes.length === 0">
+              <td colspan="5" class="text-center fst-italic py-4">
+                Nenhum processo encontrado.
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div
+      class="card-footer bg-light d-flex justify-content-between align-items-center"
+      *ngIf="totalItems > 0"
+    >
+      <small
+        >A exibir {{ processes.length }} de {{ totalItems }} processos.</small
+      >
+
+      <nav *ngIf="totalPages > 1">
+        <ul class="pagination pagination-sm mb-0">
+          <li class="page-item" [class.disabled]="filters.page === 1">
+            <a
+              class="page-link"
+              href="#"
+              (click)="goToPage(filters.page - 1); $event.preventDefault()"
+              >&laquo;</a
+            >
+          </li>
+
+          <li
+            class="page-item"
+            *ngFor="let pageNum of pages"
+            [class.active]="pageNum === filters.page"
+          >
+            <a
+              class="page-link"
+              href="#"
+              (click)="goToPage(pageNum); $event.preventDefault()"
+              >{{ pageNum }}</a
+            >
+          </li>
+
+          <li class="page-item" [class.disabled]="filters.page === totalPages">
+            <a
+              class="page-link"
+              href="#"
+              (click)="goToPage(filters.page + 1); $event.preventDefault()"
+              >&raquo;</a
+            >
+          </li>
+        </ul>
+      </nav>
+    </div>
+  </div>
+</div>
