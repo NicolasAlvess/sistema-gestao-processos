@@ -51,6 +51,7 @@ export const routes: Routes = [
     path: 'processes/:id',
     component: ProcessDetailComponent,
     canActivate: [authGuard],
+   
   },
   {
     path: 'processes',
