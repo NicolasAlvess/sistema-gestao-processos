@@ -12,24 +12,39 @@ const userRoutes = require('./user.routes');
 const processRoutes = require('./process.routes');
 const dashboardRoutes = require('./dashboard.routes');
 const chatRoutes = require('./chat.routes');
-
-const reportRoutes = require('./reports.routes'); // Corrigido para 'reports' no plural
+const reportRoutes = require('./reports.routes');
 
 const app = express();
-const port = 3000;
+// ✨ Usamos a porta do ambiente ou 3000 como padrão
+const port = process.env.PORT || 3000;
 
 // --- MIDDLEWARES ---
-app.use(cors({ origin: 'http://localhost:4200' }));
+
+// ✨ CORS ATUALIZADO: Removemos a origem fixa para permitir acesso do Render
+app.use(cors());
+
 app.use(express.json());
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
-// --- REGISTRO DAS ROTAS ---
+// --- REGISTRO DAS ROTAS DA API ---
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/processes', processRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/chat', chatRoutes);
 app.use('/api/reports', reportRoutes);
+
+
+// ✨ ========================================================== ✨
+// ✨ CÓDIGO ADICIONADO PARA SERVIR O FRONTEND EM PRODUÇÃO
+// ✨ ========================================================== ✨
+const frontendDistPath = path.join(__dirname, '..', 'frontend', 'dist', 'frontend');
+app.use(express.static(frontendDistPath));
+
+app.get('*', (req, res) => {
+  res.sendFile(path.join(frontendDistPath, 'index.html'));
+});
+
 
 // --- CONFIGURAÇÃO DO SERVIDOR HTTP E WEBSOCKET ---
 const server = http.createServer(app);
@@ -49,7 +64,8 @@ const sendNotification = (userId, payload) => {
   }
 };
 
-module.exports = { sendNotification };
+// Exportamos a função para que ela possa ser usada em outras partes do código
+module.exports.sendNotification = sendNotification;
 
 wss.on('connection', (ws, req) => {
   const parameters = new URLSearchParams(url.parse(req.url).search);
@@ -64,19 +80,12 @@ wss.on('connection', (ws, req) => {
     return;
   }
 
-
-  // =================================================================
-  // ✨ SECÇÃO CORRIGIDA ✨
-  // =================================================================
   ws.on('message', async (message) => {
     try {
       console.log(`[WebSocket] MENSAGEM RECEBIDA: ${message}`);
       const parsedMessage = JSON.parse(message);
 
-      // Verifica se a mensagem é do tipo chat
       if (parsedMessage.type === 'chat_message') {
-
-        // <<< A CORREÇÃO ESTÁ AQUI: Extraímos os dados de DENTRO do 'parsedMessage.payload'
         const { recipientId, text, senderId } = parsedMessage.payload;
 
         if (!recipientId || !text || !senderId) {
@@ -86,7 +95,6 @@ wss.on('connection', (ws, req) => {
 
         console.log(`[WebSocket] A guardar mensagem de ${senderId} para ${recipientId} na base de dados...`);
         const dbResult = await db.query(
-          // Usamos 'message_text' para corresponder à sua coluna na base de dados
           'INSERT INTO chat_messages (sender_id, recipient_id, message_text) VALUES ($1, $2, $3) RETURNING id, created_at',
           [senderId, recipientId, text]
         );
@@ -116,7 +124,6 @@ wss.on('connection', (ws, req) => {
     }
   });
 
-
   ws.on('close', () => {
     clients.forEach((clientWs, id) => {
       if (clientWs === ws) {
@@ -128,5 +135,5 @@ wss.on('connection', (ws, req) => {
 });
 
 server.listen(port, () => {
-  console.log(`Servidor HTTP e WebSocket a escutar na porta http://localhost:${port}`);
+  console.log(`Servidor HTTP e WebSocket a escutar na porta ${port}`);
 });
