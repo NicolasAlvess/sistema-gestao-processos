@@ -21,7 +21,9 @@ const port = process.env.PORT || 3000;
 // --- MIDDLEWARES ---
 
 // ✨ CORS ATUALIZADO: Removemos a origem fixa para permitir acesso do Render
-app.use(cors());
+app.use(cors({
+  origin: 'http://localhost:4200'
+}));
 
 app.use(express.json());
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
@@ -38,12 +40,12 @@ app.use('/api/reports', reportRoutes);
 // ✨ ========================================================== ✨
 // ✨ CÓDIGO ADICIONADO PARA SERVIR O FRONTEND EM PRODUÇÃO
 // ✨ ========================================================== ✨
-const frontendDistPath = path.join(__dirname, '..', 'frontend', 'dist', 'frontend');
-app.use(express.static(frontendDistPath));
+//const frontendDistPath = path.join(__dirname, '..', 'frontend', 'dist', 'frontend');
+//app.use(express.static(frontendDistPath));
 
-app.get('*', (req, res) => {
-  res.sendFile(path.join(frontendDistPath, 'index.html'));
-});
+//app.get('*', (req, res) => {
+//res.sendFile(path.join(frontendDistPath, 'index.html'));
+//});
 
 
 // --- CONFIGURAÇÃO DO SERVIDOR HTTP E WEBSOCKET ---
