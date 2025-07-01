@@ -149,7 +149,7 @@ export class ProcessListComponent implements OnInit {
           // Recarrega a lista para remover o processo da visão atual
           this.loadProcesses();
         },
-        error: (err) => {
+        error: (err:any) => {
           this.errorMessage =
             err.error?.message || 'Não foi possível excluir o processo.';
           console.error(err);

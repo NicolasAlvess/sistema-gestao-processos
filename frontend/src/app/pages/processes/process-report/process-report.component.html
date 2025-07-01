@@ -1,74 +1,124 @@
-<!--
- * ========================================================================
- * FICHEIRO: frontend/src/app/pages/processes/process-report/process-report.component.html
- * ========================================================================
- * A correção final está no bloco <style> e na estrutura do cabeçalho
- * para garantir um posicionamento perfeito na impressão.
--->
-
 <style>
-  @page {
-    size: A4;
-    margin: 2cm; /* Margem da página para impressão */
+  /* Estilos para a visualização no ecrã */
+  .report-container {
+    background-color: #f0f2f5;
+    padding: 20px;
   }
+
+  .report-page {
+    background-color: white;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.15);
+    margin: 0 auto 20px auto;
+    width: 21cm;
+    min-height: 29.7cm;
+    padding: 2cm;
+    font-family: "Times New Roman", Times, serif;
+    font-size: 12pt;
+    color: black;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .doc-header {
+    text-align: center;
+    font-size: 11pt;
+    line-height: 1.2;
+  }
+  .doc-header p {
+    margin: 0;
+  }
+  .doc-header img {
+    width: 80px;
+    height: auto;
+    margin-bottom: 15px;
+  }
+
+  .doc-title {
+    text-align: center;
+    margin-top: 40px;
+    margin-bottom: 40px;
+    font-weight: bold;
+    font-size: 14pt;
+  }
+
+  .doc-body {
+    flex-grow: 1;
+  }
+
+  .doc-body p {
+    text-align: justify;
+    line-height: 1.5;
+    text-indent: 3.5em; /* Parágrafo justificado com indentação */
+    margin-bottom: 1rem;
+  }
+
+  .doc-body p.no-indent {
+    text-indent: 0;
+  }
+
+  .signature-block {
+    text-align: center;
+    margin-top: 60px;
+  }
+
+  .signature-block p {
+    margin: 0;
+    line-height: 1.2;
+    text-indent: 0;
+  }
+
+  textarea.editable-section {
+    width: 100%;
+    min-height: 150px;
+    border: 1px dashed #ccc;
+    padding: 10px;
+    margin-top: 10px;
+    font-family: "Times New Roman", Times, serif;
+    font-size: 12pt;
+    line-height: 1.5;
+    resize: vertical;
+    text-indent: 0;
+  }
+
+  /* Estilos para a impressão */
   @media print {
     .no-print {
       display: none !important;
     }
-    body,
-    .container {
-      margin: 0;
+    .report-container {
+      background-color: transparent;
       padding: 0;
-      width: 100% !important;
-      max-width: 100% !important;
-      box-shadow: none !important;
-      border: none !important;
     }
-    /* A correção está aqui: removemos o padding do report-content e controlamos tudo com @page */
-    .report-content {
-      border: none !important;
-      box-shadow: none !important;
-      padding: 0 !important;
-      font-family: "Times New Roman", serif;
-      font-size: 12pt;
+    .report-page {
+      box-shadow: none;
+      margin: 0;
+      border: none;
+      width: auto;
+      min-height: 29.7cm; /* Garante a altura mínima na impressão */
+      height: 29.7cm;
+      padding: 0; /* A margem é controlada pelo @page */
+      box-sizing: border-box;
     }
-    .report-content p.body-p {
-      text-indent: 3.5em;
-      line-height: 1.5;
-      text-align: justify;
-      margin-bottom: 1rem;
+    .page-break {
+      page-break-after: always;
     }
-    .header-p {
-      text-indent: 0 !important;
-      margin-bottom: 0 !important;
-    }
-    .footer-quote {
-      text-indent: 0 !important;
-      margin-bottom: 0 !important;
-      font-size: 10pt;
-    }
-    .footer-signature {
-      text-indent: 0 !important;
-      font-size: 8pt;
+    textarea.editable-section {
+      border: none;
+      resize: none;
+      height: auto;
+      padding: 0;
+      background-color: white; /* Garante fundo branco na impressão */
+      color: black;
     }
   }
-  .document-body {
-    line-height: 1.5;
-    text-align: justify;
-  }
-  .signature-block {
-    text-align: center;
-    margin-top: 40px;
-  }
-  .signature-line {
-    border-top: 1px solid #000;
-    width: 400px;
-    margin: 0 auto;
+
+  @page {
+    size: A4;
+    margin: 2cm;
   }
 </style>
 
-<div class="container mt-4 mb-4">
-  <!-- Barra de Ações (não será impressa) -->
+<div class="container-fluid mt-4 mb-4 report-container">
   <div
     class="d-flex justify-content-between align-items-center mb-4 p-3 rounded bg-light border no-print"
   >
@@ -81,133 +131,165 @@
         class="form-select d-inline-block w-auto"
         [(ngModel)]="selectedTemplate"
       >
-        <option value="relatorio_geral">Relatório Geral</option>
         <option value="notificacao_oficio">
           Ofício de Notificação (Defesa Prévia)
         </option>
-        <option value="relatorio_final">Relatório Final</option>
+        <option value="paccr">Processo Administrativo (PACCR)</option>
       </select>
     </div>
     <div>
-      <button class="btn btn-primary me-2" (click)="printPage()">
-        Imprimir / Guardar como PDF
+      <button class="btn btn-info me-2" (click)="saveChanges()">
+        <i class="fas fa-save"></i> Salvar Alterações
       </button>
+      <button class="btn btn-secondary me-2" (click)="printPage()">
+        <i class="fas fa-print"></i> Imprimir Visualização
+      </button>
+
+      <button
+        class="btn btn-success me-2"
+        (click)="downloadProcessReport()"
+        [disabled]="isDownloading"
+      >
+        <i class="fas fa-server"></i>
+        <span *ngIf="!isDownloading"> Baixar PDF Oficial</span>
+        <span *ngIf="isDownloading"> Gerando no servidor...</span>
+      </button>
+
       <a
         *ngIf="process"
         [routerLink]="['/processes', process.id]"
-        class="btn btn-secondary"
-        >Voltar aos Detalhes</a
+        class="btn btn-dark"
       >
+        <i class="fas fa-arrow-left"></i> Voltar
+      </a>
     </div>
   </div>
 
-  <!-- Conteúdo do Relatório -->
-  <div
-    *ngIf="!isLoading && process"
-    class="bg-white p-5 border shadow-sm report-content"
-  >
+  <div *ngIf="!isLoading && process" class="report-content">
     <div [ngSwitch]="selectedTemplate">
-      <!-- ================== MODELO: OFÍCIO DE NOTIFICAÇÃO (CORRIGIDO) ================== -->
-      <div *ngSwitchCase="'notificacao_oficio'">
-        <div style="text-align: center; font-size: 10pt">
-          <p class="header-p"><strong>MINISTÉRIO DA DEFESA</strong></p>
-          <p class="header-p"><strong>EXÉRCITO BRASILEIRO</strong></p>
-          <p class="header-p">
-            <strong>BASE DE APOIO REGIONAL DE SOROCABA</strong>
-          </p>
-          <p class="header-p">
-            <small>(14ª Circunscrição de Recrutamento/1946)</small>
-          </p>
-        </div>
+      <div *ngSwitchCase="'notificacao_oficio'"></div>
 
-        <hr />
-
-        <table style="width: 100%; border: none; font-size: 12pt">
-          <tbody>
+      <div *ngSwitchCase="'paccr'">
+        <div class="report-page">
+          <table
+            style="width: 100%; border-collapse: collapse; margin-bottom: 40px"
+          >
             <tr>
-              <td>
-                <p class="header-p">Ofício nº [Número do Ofício]/SFPC/Cmdo</p>
-                <p class="header-p">EB: {{ process.process_number }}</p>
+              <td style="width: 25%; vertical-align: top">
+                <div
+                  style="
+                    border: 2px solid black;
+                    padding: 10px;
+                    height: 100px;
+                    text-align: center;
+                  "
+                >
+                  <p>PROTOCOLO GERAL</p>
+                  <p style="margin-top: 15px; font-weight: bold">
+                    {{ process.process_number }}
+                  </p>
+                </div>
               </td>
-              <td style="text-align: right">
-                <p class="header-p">
-                  Sorocaba, SP,
-                  {{ currentDate | date : "d 'de' MMMM 'de' y" : "pt-BR" }}.
+              <td
+                style="
+                  width: 50%;
+                  text-align: center;
+                  font-size: 10pt;
+                  line-height: 1.2;
+                  vertical-align: top;
+                "
+              >
+                <img
+                  src="assets/images/logo-brasil.png"
+                  alt="Brasão"
+                  style="width: 60px; margin-bottom: 10px"
+                />
+                <p><strong>MINISTÉRIO DA DEFESA</strong></p>
+                <p><strong>EXÉRCITO BRASILEIRO</strong></p>
+                <p><strong>COMANDO DA 2ª REGIÃO MILITAR</strong></p>
+                <p><strong>BASE DE APOIO REGIONAL DE SOROCABA</strong></p>
+                <p style="font-size: 8pt">
+                  (14ª Circunscrição de Recrutamento/1946)
                 </p>
               </td>
+              <td style="width: 25%; vertical-align: top">
+                <div
+                  style="
+                    border: 2px solid black;
+                    padding: 10px;
+                    height: 100px;
+                    text-align: center;
+                  "
+                >
+                  <p>CR Nº</p>
+                  <p style="margin-top: 15px; font-weight: bold">
+                    {{ process.cr }}
+                  </p>
+                </div>
+              </td>
             </tr>
-          </tbody>
-        </table>
+          </table>
 
-        <div class="mt-4">
-          <p class="header-p">
-            <strong>{{ process.interested_party | uppercase }}</strong>
-          </p>
-          <p class="header-p">ADMINISTRADO SFPC/48</p>
-          <p class="header-p">[Endereço do Administrado]</p>
-          <p class="header-p">[CEP] - [Cidade]-[UF]</p>
-        </div>
-
-        <p class="mt-3 header-p">
-          <strong>Assunto:</strong> Notificação {{ process.interested_party }} -
-          CR {{ process.cr }}
-        </p>
-
-        <hr />
-
-        <main class="mt-3 document-body">
-          <p class="body-p">
-            1. Informo que essa Administração Militar tomou conhecimento por
-            meio do Clube de Tiro [Nome do Clube de Tiro] que Vossa Senhoria foi
-            desassociado do mesmo, dessa forma, foi formalizado o seu
-            desligamento e protocolado nesta OM.
-          </p>
-          <p class="body-p">
-            2. Nesse sentido e obedecendo ao que estabelece o inciso III, letra
-            B, Art. 17, da Portaria 166 COLOG de 22 de dezembro de 2023, é
-            condição obrigatória para manutenção do registro para o trato com o
-            Produto Controlado pelo Exército a filiação a entidade de tiro/caça,
-            sendo assim, informo que o registro será
-            <strong>SUSPENSO TEMPORARIAMENTE</strong>, tendo em vista o presente
-            estar em desacordo com a autorização concedida anteriormente e
-            caracterizar infração.
-          </p>
-          <p class="body-p">
-            3. Pelo exposto, <strong>NOTIFICO</strong> esse administrado para
-            que apresente defesa prévia, por escrito, se assim o desejar, no
-            prazo de <strong>quinze dias</strong>, concedendo, assim, o direito
-            à ampla defesa e ao contraditório.
-          </p>
-          <p class="body-p">
-            4. Outrossim, informo que a defesa escrita deverá ser dirigida ao
-            Comandante da Base de Apoio Regional de Sorocaba e remetida ou
-            entregue na Avenida Roberto Simonsen, n° 150, Bairro Santa Rosália -
-            Sorocaba/São Paulo, ou através de e-mail.
-          </p>
-          <p class="body-p">
-            Por ordem do Comandante da 2ª região militar publicado no B Esp n°
-            002, de 2 ABRIL 24.
-          </p>
-          <div class="signature-block">
-            <div class="signature-line"></div>
-            <p class="mb-0 mt-2">
-              <strong>CARLOS ROBERTO DE JESUS JUNIOR - Tenente Coronel</strong>
+          <div class="text-center">
+            <h3 style="margin: 0; font-size: 14pt">
+              PROCESSO ADMINISTRATIVO DE CANCELAMENTO – EB Nº
+              {{ process.process_number }}
+            </h3>
+            <p style="margin-top: 5px">
+              Apoio para Assuntos Jurídicos da SFPC 2.48
             </p>
-            <p>Chefe da Seção de Fiscalização de Produtos Controlados</p>
           </div>
-        </main>
 
-        <footer class="mt-5">
-          <p class="text-center footer-quote">
-            "200 ANOS DO TENENTE ANTÔNIO JOÃO: HERÓI DA EPOPEIA DE DOURADOS"
-          </p>
-          <hr />
-        </footer>
+          <div
+            style="
+              border: 2px solid black;
+              padding: 15px;
+              margin-top: 30px;
+              margin-bottom: 30px;
+            "
+          >
+            <p><strong>ADMINISTRADO:</strong> {{ process.interested_party }}</p>
+            <p><strong>ASSUNTO:</strong> {{ process.reason }}</p>
+            <p>
+              <strong>PROCESSO/IP/BO:</strong> {{ process.boletim_ocorrencia }}
+            </p>
+          </div>
+
+          <div class="text-center">
+            <h4 style="margin-bottom: 10px">MOVIMENTO DO PROCESSO</h4>
+          </div>
+          <table
+            style="width: 100%; border-collapse: collapse; font-size: 10pt"
+          >
+            <thead>
+              <tr>
+                <th style="border: 1px solid black; padding: 5px; width: 40%">
+                  DESTINO
+                </th>
+                <th style="border: 1px solid black; padding: 5px; width: 10%">
+                  DATA
+                </th>
+                <th style="border: 1px solid black; padding: 5px; width: 40%">
+                  DESTINO
+                </th>
+                <th style="border: 1px solid black; padding: 5px; width: 10%">
+                  DATA
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let i of [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]">
+                <td style="border: 1px solid black; padding: 5px">{{ i }} -</td>
+                <td style="border: 1px solid black; padding: 5px"></td>
+                <td style="border: 1px solid black; padding: 5px">
+                  {{ i + 10 }} -
+                </td>
+                <td style="border: 1px solid black; padding: 5px"></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
       </div>
-
-      <!-- Outros modelos -->
-      <div *ngSwitchCase="'relatorio_geral'">...</div>
-      <div *ngSwitchCase="'relatorio_final'">...</div>
     </div>
   </div>
 </div>

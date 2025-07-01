@@ -1,24 +1,20 @@
 /*
  * ==========================================================================
- * FICHEIRO: frontend/src/app/pages/processes/process.service.ts (VERSÃO FINAL CORRIGIDA)
+ * FICHEIRO: frontend/src/app/pages/processes/process.service.ts (VERSÃO FINAL COMPLETA)
  * ==========================================================================
- * - Adicionada a função 'updateProcessStatus' para fazer o "soft delete".
- * - Removida a antiga função 'deleteProcess' que fazia o "hard delete".
- * - Adicionado o status 'excluido' à interface 'Process'.
+ * CONTÉM TODAS AS FUNÇÕES NECESSÁRIAS, INCLUINDO 'updateProcessStatus'
  */
 
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 
-// Interface para um único Documento
+// --- INTERFACES ---
 export interface Document {
   id: number;
   file_name: string;
   document_type: string;
 }
-
-// Interface para uma Arma
 export interface Firearm {
   id: number;
   serial_number: string;
@@ -26,32 +22,17 @@ export interface Firearm {
   caliber: string;
   status: 'Apreendida' | 'Roubada' | 'OK';
 }
-
-// Interface para um único Processo
 export interface Process {
   id: number;
   process_number: string;
   type: 'PAS' | 'PACCR';
-  status:
-    | 'instaurado'
-    | 'em_analise'
-    | 'notificacao'
-    | 'defesa'
-    | 'decisao'
-    | 'recurso'
-    | 'arquivado'
-    | 'excluido' // ✨ STATUS ADICIONADO
-    | 'Aguardando recebimento da primeira notificação'
-    | 'Aguardado prazo alegações iniciais'
-    | 'Enviar notificação para as alegações finais'
-    | 'Aguardando recebimento da segunda notificação'
-    | 'Aguardando prazo alegações finais'
-    | 'Aguardando solução do processo';
+  status: string;
   interested_party: string;
   cr?: string;
   cpf_cnpj?: string;
   reason: string;
   created_by?: string;
+  created_at?: string;
   notification1_sent_date?: string;
   notification1_received_date?: string;
   notification2_sent_date?: string;
@@ -82,9 +63,14 @@ export interface Process {
   cidade?: string;
   estado?: string;
   firearms?: Firearm[];
+  cpf?: string;
+  address?: string;
+  infraction_details?: string;
+  juntada_docs_1?: string;
+  juntada_docs_2?: string;
+  relatorio_apreciacao_defesa?: string;
+  relatorio_conclusao?: string;
 }
-
-// Interface para a resposta da API, que agora inclui dados da paginação
 export interface PaginatedProcesses {
   totalItems: number;
   totalPages: number;
@@ -96,30 +82,48 @@ export interface PaginatedProcesses {
   providedIn: 'root',
 })
 export class ProcessService {
-  private apiUrl = 'http://localhost:3000/api/processes';
+  private apiUrl = 'http://localhost:3000/api';
 
   constructor(private http: HttpClient) {}
 
   getProcesses(filters: any = {}): Observable<PaginatedProcesses> {
-    let params = new HttpParams();
-    Object.keys(filters).forEach((key) => {
-      if (filters[key]) {
-        params = params.set(key, filters[key]);
-      }
+    return this.http.get<PaginatedProcesses>(`${this.apiUrl}/processes`, {
+      params: new HttpParams({ fromObject: filters }),
     });
-    return this.http.get<PaginatedProcesses>(this.apiUrl, { params });
-  }
-
-  createProcess(processData: any): Observable<Process> {
-    return this.http.post<Process>(this.apiUrl, processData);
   }
 
   getProcessById(id: string): Observable<Process> {
-    return this.http.get<Process>(`${this.apiUrl}/${id}`);
+    return this.http.get<Process>(`${this.apiUrl}/processes/${id}`);
+  }
+
+  createProcess(processData: any): Observable<Process> {
+    return this.http.post<Process>(`${this.apiUrl}/processes`, processData);
+  }
+
+  updateProcess(id: number, processData: any): Observable<Process> {
+    return this.http.put<Process>(
+      `${this.apiUrl}/processes/${id}`,
+      processData
+    );
+  }
+
+  // ================================================================
+  // ✨ A FUNÇÃO QUE O COMPILADOR ESTÁ PROCURANDO ESTÁ AQUI ✨
+  // ================================================================
+  updateProcessStatus(
+    id: number,
+    status: 'excluido' | 'arquivado'
+  ): Observable<Process> {
+    return this.http.patch<Process>(`${this.apiUrl}/processes/${id}/status`, {
+      status,
+    });
   }
 
   updateNotificationDates(id: number, dates: any): Observable<Process> {
-    return this.http.patch<Process>(`${this.apiUrl}/${id}/dates`, dates);
+    return this.http.patch<Process>(
+      `${this.apiUrl}/processes/${id}/dates`,
+      dates
+    );
   }
 
   updateDeadlines(
@@ -130,53 +134,57 @@ export class ProcessService {
     }
   ): Observable<Process> {
     return this.http.patch<Process>(
-      `${this.apiUrl}/${id}/deadlines`,
+      `${this.apiUrl}/processes/${id}/deadlines`,
       deadlines
     );
   }
 
   uploadDocument(processId: number, formData: FormData): Observable<Document> {
     return this.http.post<Document>(
-      `${this.apiUrl}/${processId}/documents`,
+      `${this.apiUrl}/processes/${processId}/documents`,
       formData
     );
   }
 
   deleteDocument(processId: number, docId: number): Observable<any> {
-    return this.http.delete(`${this.apiUrl}/${processId}/documents/${docId}`);
+    return this.http.delete(
+      `${this.apiUrl}/processes/${processId}/documents/${docId}`
+    );
   }
 
   finalizeProcess(processId: number, formData: FormData): Observable<any> {
-    return this.http.patch(`${this.apiUrl}/${processId}/finalize`, formData);
+    return this.http.patch(
+      `${this.apiUrl}/processes/${processId}/finalize`,
+      formData
+    );
   }
 
   updateClosingDates(id: number, dates: any): Observable<Process> {
     return this.http.patch<Process>(
-      `${this.apiUrl}/${id}/closing-dates`,
+      `${this.apiUrl}/processes/${id}/closing-dates`,
       dates
     );
   }
 
   addFirearm(processId: number, firearmData: any): Observable<Firearm> {
     return this.http.post<Firearm>(
-      `${this.apiUrl}/${processId}/firearms`,
+      `${this.apiUrl}/processes/${processId}/firearms`,
       firearmData
     );
   }
 
-  updateProcess(id: number, processData: any): Observable<Process> {
-    return this.http.put<Process>(`${this.apiUrl}/${id}`, processData);
-  }
+  // VERIFIQUE SE A SUA FUNÇÃO ESTÁ IDÊNTICA A ESTA
+  getProcessReport(processId: number, templateId: string): Observable<Blob> {
+    const reportUrl = `${this.apiUrl}/reports/${processId}/full-report`;
 
-  // ✨ ========================================================== ✨
-  // ✨ NOVA FUNÇÃO PARA EXCLUIR/ARQUIVAR VIA "SOFT DELETE"
-  // ✨ ========================================================== ✨
-  updateProcessStatus(
-    id: number,
-    status: 'excluido' | 'arquivado'
-  ): Observable<Process> {
-    return this.http.patch<Process>(`${this.apiUrl}/${id}/status`, { status });
-  }
+    // Esta linha é crucial
+    const params = new HttpParams().set('template', templateId);
 
-  // A função deleteProcess(id) foi removida para evitar o hard delete.
+    console.log(
+      `[ProcessService] Enviando requisição para: ${reportUrl} com parâmetro: ?template=${templateId}`
+    );
+
+    // E esta parte, passando { params: ... }, também é crucial
+    return this.http.get(reportUrl, { params, responseType: 'blob' });
+  }
 }
