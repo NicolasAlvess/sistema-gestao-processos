@@ -1,25 +1,24 @@
-/*
- * ==========================================================================
- * FICHEIRO: backend/db.js (VERSÃO PARA DEPLOY)
- * ==========================================================================
- * - Remove dados de conexão fixos (hardcoded).
- * - Configurado para ler a URL do banco de dados a partir de uma
- * variável de ambiente (process.env.DATABASE_URL).
- * - Adicionada configuração SSL necessária para a nuvem.
- * - Usa o pacote 'dotenv' para permitir o desenvolvimento local com um .env.
- */
-
+// dentro de backend/db.js - VERSÃO CORRIGIDA
 const { Pool } = require('pg');
-require('dotenv').config(); // Carrega as variáveis do arquivo .env
 
-// A configuração da pool agora é feita através da connectionString.
-// Em produção (Render), a DATABASE_URL será fornecida pelo ambiente.
-// Em desenvolvimento (local), ela será lida do seu arquivo .env.
+const isProduction = process.env.NODE_ENV === 'production';
+
 const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-  ssl: {
-    rejectUnauthorized: false,
-  },
+  user: process.env.DB_USER,
+  host: process.env.DB_HOST,
+  database: process.env.DB_DATABASE,
+  password: process.env.DB_PASSWORD,
+  port: process.env.DB_PORT,
+
+  /*
+   * ===================================================================
+   * ✨ ADICIONE ESTA CONFIGURAÇÃO DE SSL ✨
+   * ===================================================================
+   * Em produção (no servidor), tenta usar SSL.
+   * Em desenvolvimento (sua máquina), desativa o SSL.
+  */
+  ssl: isProduction ? { rejectUnauthorized: false } : false,
+
 });
 
 module.exports = {

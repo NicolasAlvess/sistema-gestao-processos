@@ -1,11 +1,10 @@
 /*
  * ==========================================================================
- * FICHEIRO: backend/process.routes.js (VERSÃO CORRIGIDA E COMPLETA)
+ * FICHEIRO: backend/process.routes.js (VERSÃO FINAL E COMPLETA)
  * ==========================================================================
- * - Removida a rota DELETE (hard delete) que apagava os processos.
- * - Adicionada a rota PATCH /:id/status para implementar o "soft delete",
- * alterando o status do processo para 'excluido' ou 'arquivado' e
- * garantindo que o relatório de sumário funcione corretamente.
+ * - A rota PUT /:id foi atualizada para ser mais robusta, atualizando
+ * dinamicamente apenas os campos recebidos, incluindo os do PACCR.
+ * - Todas as outras rotas (PATCH, POST, GET) foram restauradas e mantidas.
  * ==========================================================================
  */
 const express = require('express');
@@ -38,11 +37,8 @@ const upload = multer({ storage: storage });
 // Aplica o middleware de autenticação a TODAS as rotas deste ficheiro
 router.use(authenticateToken);
 
-// Substitua a rota GET /api/processes existente por esta:
-
 // ROTA: GET /api/processes - Listar todos os processos
 router.get('/', async (req, res) => {
-    // Adicionado 'sortBy' para a nova ordenação
     const { searchTerm, status, type, page = 1, limit = 10, sortBy = 'creation_desc' } = req.query;
     const { id: userId, role: userRole } = req.user;
     const offset = (page - 1) * limit;
@@ -65,16 +61,13 @@ router.get('/', async (req, res) => {
         baseQuery += ' WHERE ' + conditions.join(' AND ');
     }
 
-    // ✨ LÓGICA DE ORDENAÇÃO DINÂMICA
-    let orderByClause = 'ORDER BY p.created_at DESC'; // Padrão
+    let orderByClause = 'ORDER BY p.created_at DESC';
     if (sortBy === 'deadline_asc') {
-        // Ordena pelo prazo relevante mais próximo. Nulos vão para o final.
         orderByClause = `
         ORDER BY
           (CASE
             WHEN p.status = 'Aguardado prazo alegações iniciais' THEN p.initial_statement_deadline
             WHEN p.status = 'Aguardando prazo alegações finais' THEN p.final_statement_deadline
-            -- Adicione outros status e seus prazos aqui se necessário --
             ELSE NULL
           END) ASC NULLS LAST,
           p.created_at DESC
@@ -85,7 +78,6 @@ router.get('/', async (req, res) => {
         const totalResult = await db.query(`SELECT COUNT(p.id) ${baseQuery}`, params);
         const totalItems = parseInt(totalResult.rows[0].count, 10);
 
-        // Adicionada a cláusula de ordenação à query principal
         const dataQuery = `SELECT p.id, p.process_number, p.type, p.status, p.interested_party, u.name as created_by, p.initial_statement_deadline, p.final_statement_deadline ${baseQuery} ${orderByClause} LIMIT $${paramIndex} OFFSET $${paramIndex + 1}`;
         const paginatedParams = [...params, limit, offset];
         const { rows: processes } = await db.query(dataQuery, paginatedParams);
@@ -170,37 +162,76 @@ router.get('/:id', async (req, res) => {
 });
 
 
-// ROTA: PUT /api/processes/:id - Atualizar um processo
+// ✨ ========================================================== ✨
+// ✨ ROTA ATUALIZADA PARA LIDAR COM TODOS OS CAMPOS, INCLUINDO PACCR
+// ✨ ========================================================== ✨
 router.put('/:id', requireGestorOrAdmin, async (req, res) => {
     const { id } = req.params;
     const {
+        // Campos gerais
         process_number, type, interested_party, cr, cpf_cnpj, reason,
         portaria_instauracao, encarregado_user_id,
         boletim_ocorrencia, inquerito_policial, numero_oficio,
-        email, telefone, cep, logradouro, numero, complemento, bairro, cidade, estado
+        email, telefone, cep, logradouro, numero, complemento, bairro, cidade, estado,
+        // Campos específicos do PACCR (textos editáveis)
+        juntada_docs_1, juntada_docs_2, relatorio_apreciacao_defesa, relatorio_conclusao,
     } = req.body;
 
+    const fields = [];
+    const values = [];
+    let queryIndex = 1;
+
+    const addField = (name, value) => {
+        if (value !== undefined) {
+            fields.push(`${name} = $${queryIndex++}`);
+            values.push(value);
+        }
+    };
+
+    // Adiciona todos os campos possíveis à query de atualização
+    addField('process_number', process_number);
+    addField('type', type);
+    addField('interested_party', interested_party);
+    addField('cr', cr);
+    addField('cpf_cnpj', cpf_cnpj);
+    addField('reason', reason);
+    addField('portaria_instauracao', portaria_instauracao);
+    addField('encarregado_user_id', encarregado_user_id);
+    addField('boletim_ocorrencia', boletim_ocorrencia);
+    addField('inquerito_policial', inquerito_policial);
+    addField('numero_oficio', numero_oficio);
+    addField('email', email);
+    addField('telefone', telefone);
+    addField('cep', cep);
+    addField('logradouro', logradouro);
+    addField('numero', numero);
+    addField('complemento', complemento);
+    addField('bairro', bairro);
+    addField('cidade', cidade);
+    addField('estado', estado);
+    addField('juntada_docs_1', juntada_docs_1);
+    addField('juntada_docs_2', juntada_docs_2);
+    addField('relatorio_apreciacao_defesa', relatorio_apreciacao_defesa);
+    addField('relatorio_conclusao', relatorio_conclusao);
+
+    if (fields.length === 0) {
+        return res.status(400).json({ message: 'Nenhum campo fornecido para atualização.' });
+    }
+
     try {
-        const updatedProcess = await db.query(
-            `UPDATE processes SET
-                process_number = $1, type = $2, interested_party = $3, cr = $4, cpf_cnpj = $5, reason = $6,
-                portaria_instauracao = $7, encarregado_user_id = $8, boletim_ocorrencia = $9,
-                inquerito_policial = $10, numero_oficio = $11, email = $12, telefone = $13,
-                cep = $14, logradouro = $15, numero = $16, complemento = $17, bairro = $18,
-                cidade = $19, estado = $20, updated_at = CURRENT_TIMESTAMP
-             WHERE id = $21 RETURNING *`,
-            [
-                process_number, type, interested_party, cr, cpf_cnpj, reason,
-                portaria_instauracao, encarregado_user_id, boletim_ocorrencia,
-                inquerito_policial, numero_oficio, email, telefone,
-                cep, logradouro, numero, complemento, bairro, cidade, estado,
-                id
-            ]
-        );
-        if (updatedProcess.rows.length === 0) {
+        const updateQuery = `
+            UPDATE processes 
+            SET ${fields.join(', ')}, updated_at = CURRENT_TIMESTAMP 
+            WHERE id = $${queryIndex}
+            RETURNING *;
+        `;
+        values.push(id); // Adiciona o ID ao final para a cláusula WHERE
+
+        const { rows } = await db.query(updateQuery, values);
+        if (rows.length === 0) {
             return res.status(404).json({ message: 'Processo não encontrado para atualizar.' });
         }
-        res.json(updatedProcess.rows[0]);
+        res.json(rows[0]);
     } catch (error) {
         console.error('Erro ao atualizar processo:', error);
         res.status(500).json({ message: 'Erro de servidor ao atualizar o processo.' });
@@ -208,14 +239,10 @@ router.put('/:id', requireGestorOrAdmin, async (req, res) => {
 });
 
 
-// ✨ ========================================================== ✨
-// ✨ NOVA ROTA PARA EXCLUIR/ARQUIVAR VIA SOFT DELETE
-// ✨ ========================================================== ✨
-
 // ROTA: PATCH /api/processes/:id/status - Mudar o status (ex: para arquivado, excluido)
 router.patch('/:id/status', requireGestorOrAdmin, async (req, res) => {
     const { id: processId } = req.params;
-    const { status: newStatus, notes } = req.body; // O frontend enviará o novo status ('arquivado' ou 'excluido')
+    const { status: newStatus, notes } = req.body;
     const { id: userId, name: userName } = req.user;
 
     if (!newStatus || (newStatus !== 'arquivado' && newStatus !== 'excluido')) {
@@ -229,13 +256,11 @@ router.patch('/:id/status', requireGestorOrAdmin, async (req, res) => {
         }
         const currentProcess = processResult.rows[0];
 
-        // 1. Atualiza o status na tabela principal 'processes'
         const updatedProcess = await db.query(
             `UPDATE processes SET status = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2 RETURNING *`,
             [newStatus, processId]
         );
 
-        // 2. Insere o registro no histórico
         const historyNotes = notes || `Status alterado para ${newStatus} por ${userName}.`;
         await db.query(
             'INSERT INTO process_history (process_id, user_id, from_status, to_status, notes, process_number) VALUES ($1, $2, $3, $4, $5, $6)',
@@ -248,7 +273,6 @@ router.patch('/:id/status', requireGestorOrAdmin, async (req, res) => {
         res.status(500).json({ message: `Erro de servidor ao alterar o status do processo.` });
     }
 });
-
 
 // ROTA: PATCH /api/processes/:id/dates - Atualizar datas de notificação e status
 router.patch('/:id/dates', requireAuxiliarOrAbove, async (req, res) => {
@@ -285,10 +309,10 @@ router.patch('/:id/dates', requireAuxiliarOrAbove, async (req, res) => {
 
         const updatedProcess = await db.query(
             `UPDATE processes SET 
-               notification1_sent_date = $1, notification1_received_date = $2, 
-               notification2_sent_date = $3, notification2_received_date = $4,
-               status = $5, updated_at = CURRENT_TIMESTAMP 
-             WHERE id = $6 RETURNING *`,
+                notification1_sent_date = $1, notification1_received_date = $2, 
+                notification2_sent_date = $3, notification2_received_date = $4,
+                status = $5, updated_at = CURRENT_TIMESTAMP 
+              WHERE id = $6 RETURNING *`,
             params
         );
 
@@ -327,10 +351,10 @@ router.patch('/:id/deadlines', requireAuxiliarOrAbove, async (req, res) => {
 
         const updatedProcess = await db.query(
             `UPDATE processes SET 
-               initial_statement_deadline = $1, 
-               final_statement_deadline = $2,
-               updated_at = CURRENT_TIMESTAMP 
-             WHERE id = $3 RETURNING *`,
+                initial_statement_deadline = $1, 
+                final_statement_deadline = $2,
+                updated_at = CURRENT_TIMESTAMP 
+              WHERE id = $3 RETURNING *`,
             params
         );
 
@@ -407,11 +431,11 @@ router.patch('/:id/finalize', requireAuxiliarOrAbove, upload.single('solutionFil
 
         const updatedProcess = await db.query(
             `UPDATE processes 
-               SET final_solution_publication_date = $1,
-                   final_solution_bulletin_number = $2,
-                   status = 'arquivado',
-                   updated_at = CURRENT_TIMESTAMP
-               WHERE id = $3 RETURNING *`,
+                SET final_solution_publication_date = $1,
+                    final_solution_bulletin_number = $2,
+                    status = 'arquivado',
+                    updated_at = CURRENT_TIMESTAMP
+                WHERE id = $3 RETURNING *`,
             [publicationDate, bulletinNumber, processId]
         );
 

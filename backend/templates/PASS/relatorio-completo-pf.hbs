@@ -1,0 +1,60 @@
+<html lang="pt-br">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Relatório do Processo {{processData.process_number}}</title>
+    <style>
+      /* CSS Básico para deixar o documento com uma aparência profissional */
+      body { font-family: Arial, sans-serif; margin: 40px; font-size: 12pt; }
+      .header, .footer { text-align: center; font-size: 10pt; color: #777; }
+      .header { border-bottom: 1px solid #ccc; padding-bottom: 10px;
+      margin-bottom: 40px; } .footer { border-top: 1px solid #ccc; padding-top:
+      10px; margin-top: 40px; position: fixed; /* Fixa o rodapé no final de cada
+      página */ bottom: 0; width: 90%; } .content { margin-bottom: 80px; /*
+      Garante espaço para o rodapé fixo */ } h1 { text-align: center; font-size:
+      16pt; margin-bottom: 50px; } .field { margin-bottom: 15px; } .field strong
+      { display: block; margin-bottom: 3px; }
+    </style>
+  </head>
+  <body>
+
+    <header class="header">
+      Prefeitura Municipal de Exemplo<br />
+      Secretaria de Gestão Administrativa
+    </header>
+
+    <div class="content">
+      <h1>RELATÓRIO DE PROCESSO ADMINISTRATIVO SANCIONADOR (PASS)</h1>
+
+      <div class="field">
+        <strong>NÚMERO DO PROCESSO:</strong>
+        <span>{{processData.process_number}}</span>
+      </div>
+
+      <div class="field">
+        <strong>INTERESSADO (PESSOA FÍSICA):</strong>
+        <span>{{processData.interested_party}}</span>
+      </div>
+
+      <div class="field">
+        <strong>TIPO:</strong>
+        <span>{{processData.type}}</span>
+      </div>
+
+      <div class="field">
+        <strong>DESCRIÇÃO DO FATO:</strong>
+        <p>{{processData.description}}</p>
+      </div>
+
+      <div class="field">
+        <strong>STATUS ATUAL:</strong>
+        <span>{{processData.status}}</span>
+      </div>
+    </div>
+
+    <footer class="footer">
+      Documento gerado pelo Sistema de Gestão de Processos em
+      {{currentDate}}.
+    </footer>
+
+  </body>
+</html>
