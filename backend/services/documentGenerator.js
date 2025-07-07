@@ -1,99 +1,88 @@
+/*
+ * ==========================================================================
+ * FICHEIRO: services/documentGenerator.js (VERSÃO FINAL COMPLETA)
+ * ==========================================================================
+ * - Usa um único arquivo de template por tipo de processo.
+ * - Contém a lógica de data por extenso para a Página 3.
+ */
 const puppeteer = require('puppeteer');
 const handlebars = require('handlebars');
 const fs = require('fs/promises');
 const path = require('path');
+const { format, addDays } = require('date-fns');
+const { ptBR } = require('date-fns/locale');
+const porExtenso = require('numero-por-extenso');
 const db = require('../db');
 
-// Register Handlebars helpers
-handlebars.registerHelper('times', function (n, options) {
-    let result = '';
-    for (let i = 0; i < n; i++) {
-        result += options.fn({
-            index: i,
-            count: i + 1
-        });
-    }
-    return result;
-});
+// --- Helpers do Handlebars ---
+handlebars.registerHelper('times', function (n, block) { let accum = ''; for (let i = 0; i < n; ++i) { accum += block.fn({ ...this, index: i }); } return accum; });
+handlebars.registerHelper('add', function (value1, value2) { return value1 + value2; });
 
-handlebars.registerHelper('add', function (a, b) {
-    return Number(a) + Number(b);
-});
 
 const generateReport = async (processId, templateId) => {
-    console.log(`[REPORT] Starting report generation for process ${processId}`);
+    console.log(`[SERVICE] Requisição recebida. ID: ${processId}, Template: "${templateId}"`);
 
     try {
-        // 1. Get process data
-        const { rows } = await db.query('SELECT * FROM processes WHERE id = $1', [processId]);
-        if (rows.length === 0) throw new Error(`Process ${processId} not found`);
+        const query = `SELECT *, cpf_cnpj AS cpf FROM processes WHERE id = $1`;
+        const { rows } = await db.query(query, [processId]);
+        if (rows.length === 0) throw new Error(`Processo com ID ${processId} não encontrado.`);
         const processData = rows[0];
 
-        // 2. Set up paths
-        const templatesDir = path.join(__dirname, '..', 'templates');
-        const assetsDir = path.join(__dirname, '..', 'assets');
-        const templatePath = path.join(templatesDir, 'PACCR', 'capa.hbs');
-        const logoPath = path.join(assetsDir, 'brasao.png');
-
-        console.log(`[DEBUG] Logo path: ${logoPath}`);
-
-        // 3. Load and convert logo to base64
-        let logoBase64 = '';
+        let logoBase64 = '', hasLogo = false;
         try {
-            const logoFile = await fs.readFile(logoPath);
-            logoBase64 = logoFile.toString('base64');
-            console.log('[REPORT] Logo loaded successfully');
-        } catch (error) {
-            console.error('[WARNING] Could not load logo:', error.message);
+            const logoPath = path.join(__dirname, '..', 'assets', 'brasao.png');
+            logoBase64 = (await fs.readFile(logoPath)).toString('base64');
+            hasLogo = true;
+        } catch (imgError) { console.error('[DEBUG] Logo não encontrado.'); }
+
+        // Lógica para calcular as datas dinâmicas
+        let termoAutuacaoDate = '[Data de Autuação não definida]';
+        let termoAberturaDateExtenso = '[Data de Abertura não definida]';
+
+        if (processData.notification1_sent_date) {
+            const notificationDate = new Date(processData.notification1_sent_date);
+            const autuacaoDate = addDays(notificationDate, 1);
+
+            termoAutuacaoDate = format(autuacaoDate, "d 'de' MMMM 'de' yyyy", { locale: ptBR });
+
+            const dia = autuacaoDate.getDate();
+            const ano = autuacaoDate.getFullYear();
+            const nomeMes = format(autuacaoDate, "MMMM", { locale: ptBR });
+            termoAberturaDateExtenso = `Aos ${porExtenso.porExtenso(dia)} dias do mês de ${nomeMes} do ano de ${porExtenso.porExtenso(ano)}`;
         }
 
-        // 4. Compile template
-        const templateContent = await fs.readFile(templatePath, 'utf-8');
-        const template = handlebars.compile(templateContent);
+        // Lógica de seleção de template
+        let templatePath;
+        if (templateId === 'paccr') {
+            templatePath = path.join(__dirname, '..', 'templates', 'paccr', 'relatorio_paccr.hbs');
+        } else {
+            throw new Error(`Template desconhecido: "${templateId}"`);
+        }
 
-        const html = template({
+        const templateHtml = await fs.readFile(templatePath, 'utf-8');
+        const template = handlebars.compile(templateHtml);
+
+        const dataForTemplate = {
             process: processData,
+            termoAutuacaoDate: termoAutuacaoDate,
+            termoAberturaDateExtenso: termoAberturaDateExtenso,
             logoBase64: logoBase64,
-            hasLogo: !!logoBase64,
-            formatDate: (date) => date ? new Date(date).toLocaleDateString('pt-BR') : ''
-        });
-
-        // 5. Generate PDF
-        const browser = await puppeteer.launch({
-            headless: 'new',
-            args: ['--no-sandbox', '--disable-setuid-sandbox']
-        });
-
-        const page = await browser.newPage();
-
-        await page.setContent(html, {
-            waitUntil: 'networkidle0',
-            timeout: 30000
-        });
-
-        const pdfOptions = {
-            format: 'A4',
-            printBackground: true,
-            margin: {
-                top: '2cm',
-                right: '2cm',
-                bottom: '2cm',
-                left: '2cm'
-            }
+            hasLogo: hasLogo
         };
 
-        const pdfBuffer = await page.pdf(pdfOptions);
-        await browser.close();
+        const finalHtml = template(dataForTemplate);
 
-        console.log('[REPORT] PDF generated successfully');
+        const browser = await puppeteer.launch({ args: ['--no-sandbox'] });
+        const page = await browser.newPage();
+        await page.setContent(finalHtml, { waitUntil: 'networkidle0' });
+        const pdfBuffer = await page.pdf({ format: 'A4', printBackground: true, margin: { top: '0', right: '0', bottom: '0', left: '0' } });
+        await browser.close();
         return pdfBuffer;
 
     } catch (error) {
-        console.error('[ERROR] Report generation failed:', error);
-        throw new Error(`Failed to generate report: ${error.message}`);
+        console.error(`[SERVICE] Erro fatal durante a geração do relatório:`, error);
+        throw error;
     }
 };
 
-module.exports = {
-    generateReport
-};
+module.exports = { generateReport };

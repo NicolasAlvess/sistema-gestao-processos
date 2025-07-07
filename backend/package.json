@@ -20,6 +20,7 @@
     "handlebars": "4.7.7",
     "jsonwebtoken": "^9.0.2",
     "multer": "^2.0.1",
+    "numero-por-extenso": "^1.0.8",
     "pg": "^8.16.0",
     "puppeteer": "^24.11.1",
     "ws": "^8.18.2"
