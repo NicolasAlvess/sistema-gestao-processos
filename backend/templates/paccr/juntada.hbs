@@ -1,0 +1,38 @@
+{{! backend/templates/paccr/juntada.hbs }}
+<div class="page">
+  <div class="page-internal-header">
+    {{#if hasLogo}}<img src="data:image/png;base64,{{logoBase64}}" alt="Brasão" />{{/if}}
+    <p class="text-bold">MINISTÉRIO DA DEFESA</p>
+    <p class="text-bold">EXÉRCITO BRASILEIRO</p>
+    <p class="text-bold">COMANDO DA 2ª REGIÃO MILITAR</p>
+    <p class="text-bold">BASE DE APOIO REGIONAL DE SOROCABA</p>
+    <p style="font-size: 9pt;">(14ª Circunscrição de Recrutamento/1946)</p>
+    <p class="header-address">Av. Roberto Simonsen, 150, Jd Santa Rosalia, CEP nº 18090-000 Sorocaba – SP, telefone (11) 3273-2650</p>
+  </div>
+
+  <div class="main-title">
+    <h1>JUNTADA</h1>
+  </div>
+
+  <div class="doc-body">
+    <p class="no-indent">
+      1. {{juntadaDateExtenso}}, nesta cidade de Sorocaba/SP, no Quartel da B Ap R Sorocaba, faço a juntada aos autos do presente processo, dos documentos a seguir especificados:
+    </p>
+
+    <div class="editable-content">
+      {{{process.juntada_docs_1}}}
+    </div>
+
+    <p class="no-indent" style="margin-top: 1cm;">
+      2. Do que, para constar, lavrei o presente termo.
+    </p>
+  </div>
+
+  <div class="signature-section">
+    <div class="signature-block">
+      <p>_________________________________________</p>
+      <p class="text-bold">SIMONE DE SOUZA CARVALHO - 3º Sargento</p>
+      <p>Encarregado do Processo</p>
+    </div>
+  </div>
+</div>
