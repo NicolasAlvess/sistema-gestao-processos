@@ -1,5 +1,5 @@
 <style>
-  /* Estilos para a visualização no ecrã */
+  /* Estilos para a visualização na tela */
   .report-container {
     background-color: #f0f2f5;
     padding: 20px;
@@ -48,7 +48,7 @@
   .doc-body p {
     text-align: justify;
     line-height: 1.5;
-    text-indent: 3.5em; /* Parágrafo justificado com indentação */
+    text-indent: 3.5em;
     margin-bottom: 1rem;
   }
 
@@ -94,9 +94,9 @@
       margin: 0;
       border: none;
       width: auto;
-      min-height: 29.7cm; /* Garante a altura mínima na impressão */
+      min-height: 29.7cm;
       height: 29.7cm;
-      padding: 0; /* A margem é controlada pelo @page */
+      padding: 0;
       box-sizing: border-box;
     }
     .page-break {
@@ -107,7 +107,7 @@
       resize: none;
       height: auto;
       padding: 0;
-      background-color: white; /* Garante fundo branco na impressão */
+      background-color: white;
       color: black;
     }
   }
@@ -119,177 +119,165 @@
 </style>
 
 <div class="container-fluid mt-4 mb-4 report-container">
-  <div
-    class="d-flex justify-content-between align-items-center mb-4 p-3 rounded bg-light border no-print"
-  >
+  <!-- Barra de Ações -->
+  <div class="d-flex justify-content-between align-items-center mb-4 p-3 rounded bg-light border no-print">
     <div>
-      <label for="templateSelector" class="form-label me-2"
-        >Selecione o Modelo:</label
-      >
-      <select
-        id="templateSelector"
-        class="form-select d-inline-block w-auto"
-        [(ngModel)]="selectedTemplate"
-      >
-        <option value="notificacao_oficio">
-          Ofício de Notificação (Defesa Prévia)
-        </option>
+      <label for="templateSelector" class="form-label me-2">Selecione o Modelo:</label>
+      <select id="templateSelector" class="form-select d-inline-block w-auto" [(ngModel)]="selectedTemplate">
+        <option value="notificacao_oficio">Ofício de Notificação (Defesa Prévia)</option>
         <option value="paccr">Processo Administrativo (PACCR)</option>
       </select>
     </div>
     <div>
-      <button class="btn btn-info me-2" (click)="saveChanges()">
-        <i class="fas fa-save"></i> Salvar Alterações
-      </button>
-      <button class="btn btn-secondary me-2" (click)="printPage()">
-        <i class="fas fa-print"></i> Imprimir Visualização
-      </button>
-
-      <button
-        class="btn btn-success me-2"
-        (click)="downloadProcessReport()"
-        [disabled]="isDownloading"
-      >
+      <button class="btn btn-info me-2" (click)="saveChanges()"><i class="fas fa-save"></i> Salvar Alterações</button>
+      <button class="btn btn-secondary me-2" (click)="printPage()"><i class="fas fa-print"></i> Imprimir Visualização</button>
+      <button class="btn btn-success me-2" (click)="downloadProcessReport()" [disabled]="isDownloading">
         <i class="fas fa-server"></i>
         <span *ngIf="!isDownloading"> Baixar PDF Oficial</span>
-        <span *ngIf="isDownloading"> Gerando no servidor...</span>
+        <span *ngIf="isDownloading"> Gerando...</span>
       </button>
-
-      <a
-        *ngIf="process"
-        [routerLink]="['/processes', process.id]"
-        class="btn btn-dark"
-      >
-        <i class="fas fa-arrow-left"></i> Voltar
-      </a>
+      <a *ngIf="process" [routerLink]="['/processes', process.id]" class="btn btn-dark"><i class="fas fa-arrow-left"></i> Voltar</a>
     </div>
   </div>
 
   <div *ngIf="!isLoading && process" class="report-content">
     <div [ngSwitch]="selectedTemplate">
-      <div *ngSwitchCase="'notificacao_oficio'"></div>
+      <div *ngSwitchCase="'notificacao_oficio'">
+        <p>Pré-visualização para "Ofício de Notificação" a ser implementada.</p>
+      </div>
 
       <div *ngSwitchCase="'paccr'">
+        <!-- ======================================================= -->
+        <!-- SEU CÓDIGO ORIGINAL DAS PÁGINAS 1 A 4 (MANTIDO) -->
+        <!-- ======================================================= -->
         <div class="report-page">
-          <table
-            style="width: 100%; border-collapse: collapse; margin-bottom: 40px"
-          >
-            <tr>
-              <td style="width: 25%; vertical-align: top">
-                <div
-                  style="
-                    border: 2px solid black;
-                    padding: 10px;
-                    height: 100px;
-                    text-align: center;
-                  "
-                >
-                  <p>PROTOCOLO GERAL</p>
-                  <p style="margin-top: 15px; font-weight: bold">
-                    {{ process.process_number }}
-                  </p>
-                </div>
-              </td>
-              <td
-                style="
-                  width: 50%;
-                  text-align: center;
-                  font-size: 10pt;
-                  line-height: 1.2;
-                  vertical-align: top;
-                "
-              >
-                <img
-                  src="assets/images/logo-brasil.png"
-                  alt="Brasão"
-                  style="width: 60px; margin-bottom: 10px"
-                />
-                <p><strong>MINISTÉRIO DA DEFESA</strong></p>
-                <p><strong>EXÉRCITO BRASILEIRO</strong></p>
-                <p><strong>COMANDO DA 2ª REGIÃO MILITAR</strong></p>
-                <p><strong>BASE DE APOIO REGIONAL DE SOROCABA</strong></p>
-                <p style="font-size: 8pt">
-                  (14ª Circunscrição de Recrutamento/1946)
-                </p>
-              </td>
-              <td style="width: 25%; vertical-align: top">
-                <div
-                  style="
-                    border: 2px solid black;
-                    padding: 10px;
-                    height: 100px;
-                    text-align: center;
-                  "
-                >
-                  <p>CR Nº</p>
-                  <p style="margin-top: 15px; font-weight: bold">
-                    {{ process.cr }}
-                  </p>
-                </div>
-              </td>
-            </tr>
-          </table>
-
-          <div class="text-center">
-            <h3 style="margin: 0; font-size: 14pt">
-              PROCESSO ADMINISTRATIVO DE CANCELAMENTO – EB Nº
-              {{ process.process_number }}
-            </h3>
-            <p style="margin-top: 5px">
-              Apoio para Assuntos Jurídicos da SFPC 2.48
-            </p>
-          </div>
-
-          <div
-            style="
-              border: 2px solid black;
-              padding: 15px;
-              margin-top: 30px;
-              margin-bottom: 30px;
-            "
-          >
-            <p><strong>ADMINISTRADO:</strong> {{ process.interested_party }}</p>
-            <p><strong>ASSUNTO:</strong> {{ process.reason }}</p>
-            <p>
-              <strong>PROCESSO/IP/BO:</strong> {{ process.boletim_ocorrencia }}
-            </p>
-          </div>
-
-          <div class="text-center">
-            <h4 style="margin-bottom: 10px">MOVIMENTO DO PROCESSO</h4>
-          </div>
-          <table
-            style="width: 100%; border-collapse: collapse; font-size: 10pt"
-          >
-            <thead>
-              <tr>
-                <th style="border: 1px solid black; padding: 5px; width: 40%">
-                  DESTINO
-                </th>
-                <th style="border: 1px solid black; padding: 5px; width: 10%">
-                  DATA
-                </th>
-                <th style="border: 1px solid black; padding: 5px; width: 40%">
-                  DESTINO
-                </th>
-                <th style="border: 1px solid black; padding: 5px; width: 10%">
-                  DATA
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr *ngFor="let i of [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]">
-                <td style="border: 1px solid black; padding: 5px">{{ i }} -</td>
-                <td style="border: 1px solid black; padding: 5px"></td>
-                <td style="border: 1px solid black; padding: 5px">
-                  {{ i + 10 }} -
-                </td>
-                <td style="border: 1px solid black; padding: 5px"></td>
-              </tr>
-            </tbody>
-          </table>
+            <table style="width: 100%; border-collapse: collapse; margin-bottom: 40px">
+                <tr>
+                    <td style="width: 25%; vertical-align: top"><div style="border: 1px solid black; padding: 10px; height: 100px; text-align: center; display: flex; flex-direction: column; justify-content: center;"><p><strong>PROTOCOLO GERAL</strong></p><p style="margin-top: 10px;">{{ process.process_number }}</p></div></td>
+                    <td style="width: 50%; text-align: center; vertical-align: top;"><img src="assets/images/brasao.png" alt="Brasão" style="width: 80px; margin-bottom: 10px"/><p><strong>MINISTÉRIO DA DEFESA</strong></p><p><strong>EXÉRCITO BRASILEIRO</strong></p><p><strong>COMANDO DA 2ª REGIÃO MILITAR</strong></p><p><strong>BASE DE APOIO REGIONAL DE SOROCABA</strong></p><p style="font-size: 10pt;">(14ª Circunscrição de Recrutamento/1946)</p><p style="font-size: 9pt;">Av. Roberto Simonsen, 150, Jd Santa Rosalia, CEP nº 18090-000 Sorocaba – SP, telefone (11) 3273-2650</p></td>
+                    <td style="width: 25%; vertical-align: top"><div style="border: 1px solid black; padding: 10px; height: 100px; text-align: center; display: flex; flex-direction: column; justify-content: center;"><p><strong>CR Nº</strong></p><p style="margin-top: 10px;">{{ process.cr }}</p></div></td>
+                </tr>
+            </table>
+            <div class="doc-title" style="margin-top: 20px;"><p style="font-weight: bold; font-size: 14pt;">PROCESSO ADMINISTRATIVO DE CANCELAMENTO – EB Nº {{ process.process_number }}</p><p style="font-size: 12pt;">Apoio para Assuntos Jurídicos da SFPC 2.48</p></div>
+            <div style="border: 1px solid black; padding: 15px; margin-top: 20px; margin-bottom: 20px;"><p><strong>ADMINISTRADO:</strong> {{ process.interested_party | uppercase }}</p><p><strong>ASSUNTO:</strong> {{ process.reason }}</p><p><strong>PROCESSO/IP/BO:</strong> {{ process.boletim_ocorrencia }}</p></div>
+            <div class="doc-title" style="margin: 20px 0 10px;"><p style="font-weight: bold; font-size: 12pt;">MOVIMENTO DO PROCESSO</p></div>
+            <table style="width: 100%; border-collapse: collapse; font-size: 10pt;"><thead><tr><th style="border: 1px solid black; padding: 5px; width: 40%">DESTINO</th><th style="border: 1px solid black; padding: 5px; width: 10%">DATA</th><th style="border: 1px solid black; padding: 5px; width: 40%">DESTINO</th><th style="border: 1px solid black; padding: 5px; width: 10%">DATA</th></tr></thead><tbody><tr *ngFor="let i of [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]"><td style="border: 1px solid black; padding: 5px;">{{ i }} -</td><td style="border: 1px solid black; padding: 5px;"></td><td style="border: 1px solid black; padding: 5px;">{{ i + 10 }} -</td><td style="border: 1px solid black; padding: 5px;"></td></tr></tbody></table>
         </div>
+
+        <div class="page-break no-print"></div>
+
+        <div class="report-page">
+            <div class="doc-header"><img src="assets/images/brasao.png" alt="Brasão"/><p><strong>MINISTÉRIO DA DEFESA</strong></p><p><strong>EXÉRCITO BRASILEIRO</strong></p><p><strong>COMANDO DA 2ª REGIÃO MILITAR</strong></p><p><strong>BASE DE APOIO REGIONAL DE SOROCABA</strong></p><p style="font-size: 10pt;">(14ª Circunscrição de Recrutamento/1946)</p><p style="font-size: 9pt;">Av. Roberto Simonsen, 150, Jd Santa Rosalia, CEP nº 18090-000 Sorocaba – SP, telefone (11) 3273-2650</p></div>
+            <h3 class="doc-title">TERMO DE AUTUAÇÃO</h3>
+            <div class="doc-body"><p>Processo Administrativo autuado sob o NUP/EB {{ process.process_number }} Apoio As Jurd SFPC 2.48 da B Ap R Sorocaba, que trata sobre o Cancelamento de Certificado de Registro (CR), do Colecionador, Atirador Desportivo e Caçador (CAC), Sr. {{ process.interested_party }}, CR n° {{ process.cr }} e CPF nº {{ process.cpf }}, em virtude da possível perda de sua idoneidade para o trato com Produtos Controlados pelo Exército, uma vez que responde a (Processo nº {{ process.boletim_ocorrencia }}) pelo crime de {{ process.reason }}.</p></div>
+            <div class="mt-auto"><p style="text-align: right;">Sorocaba-SP, {{ formatSimpleDate(process.notification1_sent_date) }}.</p><div class="signature-block"><p>_________________________________________</p><p><strong>SIMONE DE SOUZA CARVALHO – 3º Sargento</strong></p><p>Encarregado do Processo</p></div></div>
+        </div>
+
+        <div class="page-break no-print"></div>
+
+        <div class="report-page">
+            <div class="doc-header"><img src="assets/images/brasao.png" alt="Brasão"/><p><strong>MINISTÉRIO DA DEFESA</strong></p><p><strong>EXÉRCITO BRASILEIRO</strong></p><p><strong>COMANDO DA 2ª REGIÃO MILITAR</strong></p><p><strong>BASE DE APOIO REGIONAL DE SOROCABA</strong></p><p style="font-size: 10pt;">(14ª Circunscrição de Recrutamento/1946)</p><p style="font-size: 9pt;">Av. Roberto Simonsen, 150, Jd Santa Rosalia, CEP nº 18090-000 Sorocaba – SP, telefone (11) 3273-2650</p></div>
+            <h3 class="doc-title">TERMO DE ABERTURA</h3>
+            <div class="doc-body"><p>{{ formatDateToWords(process.notification1_sent_date) }}, nesta cidade de Sorocaba-SP, no Quartel da B Ap R Sorocaba, faço a abertura dos trabalhos atinentes ao Processo Administrativo de Cancelamento de Certificado de Registro (PACCR) do CAC, Sr. {{ process.interested_party }}, CR n° {{ process.cr }}, e CPF nº {{ process.cpf }}.</p></div>
+            <div class="mt-auto"><div class="signature-block"><p>_________________________________________</p><p><strong>SIMONE DE SOUZA CARVALHO – 3º Sargento</strong></p><p>Encarregado do Processo</p></div></div>
+        </div>
+
+        <div class="page-break no-print"></div>
+
+        <div class="report-page">
+            <div class="doc-header"><img src="assets/images/brasao.png" alt="Brasão"/><p><strong>MINISTÉRIO DA DEFESA</strong></p><p><strong>EXÉRCITO BRASILEIRO</strong></p><p><strong>COMANDO DA 2ª REGIÃO MILITAR</strong></p><p><strong>BASE DE APOIO REGIONAL DE SOROCABA</strong></p><p style="font-size: 10pt;">(14ª Circunscrição de Recrutamento/1946)</p><p style="font-size: 9pt;">Av. Roberto Simonsen, 150, Jd Santa Rosalia, CEP nº 18090-000 Sorocaba – SP, telefone (11) 3273-2650</p></div>
+            <h3 class="doc-title">JUNTADA</h3>
+            <div class="doc-body"><p class="no-indent">1. {{ formatDateToWords(process.initial_statement_deadline) }}, nesta cidade de Sorocaba/SP, no Quartel da B Ap R Sorocaba, faço a juntada aos autos do presente processo, dos documentos a seguir especificados:</p><textarea class="editable-section" rows="10" placeholder="Digite os itens aqui..." [(ngModel)]="process.juntada_docs_1"></textarea><p class="no-indent" style="margin-top: 1cm;">2. Do que, para constar, lavrei o presente termo.</p></div>
+            <div class="mt-auto"><div class="signature-block"><p>_________________________________________</p><p><strong>SIMONE DE SOUZA CARVALHO – 3º Sargento</strong></p><p>Encarregado do Processo</p></div></div>
+        </div>
+        
+        <!-- ============================================================== -->
+        <!-- ✨ PRÉ-VISUALIZAÇÃO DA PÁGINA 5 (CERTIDÃO) ADICIONADA ABAIXO ✨ -->
+        <!-- ============================================================== -->
+        <div class="page-break no-print"></div>
+        
+        <div class="report-page">
+          <div class="doc-header">
+            <img src="assets/images/brasao.png" alt="Brasão"/>
+            <p><strong>MINISTÉRIO DA DEFESA</strong></p>
+            <p><strong>EXÉRCITO BRASILEIRO</strong></p>
+            <p><strong>COMANDO DA 2ª REGIÃO MILITAR</strong></p>
+            <p><strong>BASE DE APOIO REGIONAL DE SOROCABA</strong></p>
+            <p style="font-size: 10pt;">(14ª Circunscrição de Recrutamento/1946)</p>
+            <p style="font-size: 9pt;">Av. Roberto Simonsen, 150, Jd Santa Rosalia, CEP nº 18090-000 Sorocaba – SP, telefone (11) 3273-2650</p>
+          </div>
+          <h3 class="doc-title">CERTIDÃO</h3>
+
+          <div class="alert alert-info no-print my-3">
+            <div class="form-check form-switch">
+              <input class="form-check-input" type="checkbox" role="switch" id="defesaApresentadaCheck" [(ngModel)]="process.defesa_apresentada">
+              <label class="form-check-label" for="defesaApresentadaCheck">
+                <strong>Marcar esta caixa se a defesa foi apresentada.</strong>
+              </label>
+            </div>
+            <small>Lembre-se de clicar em "Salvar Alterações" após mudar esta opção.</small>
+          </div>
+          
+          <div class="doc-body">
+            <div *ngIf="!process.defesa_apresentada">
+              <p class="no-indent">1. Certifico e dou fé que aos {{ formatDateToWords(process.initial_statement_deadline) }} transcorreu o prazo regulamentar de 10 (dez) dias uteis, sem que o Sr. {{ process.interested_party }}, CR n° {{ process.cr }}, apresentasse sua defesa escrita nos autos do processo em face da notificação realizada por meio do ofício nº {{ process.numero_oficio }}-SFPC/Cmdo.</p>
+            </div>
+            <div *ngIf="process.defesa_apresentada">
+              <p class="no-indent">1. Certifico e dou fé que aos {{ formatDateToWords(process.initial_statement_deadline) }} transcorreu o prazo regulamentar de 10 (dez) dias uteis, tendo o Sr. {{ process.interested_party }}, CR n° {{ process.cr }}, apresentado sua defesa escrita nos autos do processo em face da notificação realizada por meio do ofício nº {{ process.numero_oficio }}-SFPC/Cmdo.</p>
+            </div>
+            <p class="no-indent" style="margin-top: 1cm;">2. Do que, para constar, lavrei o presente termo.</p>
+          </div>
+
+          <div class="mt-auto">
+            <div class="signature-block">
+                <p>_________________________________________</p>
+                <p><strong>SIMONE DE SOUZA CARVALHO – 3º Sargento</strong></p>
+                <p>Encarregado do Processo</p>
+            </div>
+          </div>
+        </div>
+
+          <div *ngIf="process.defesa_apresentada">
+          <div class="page-break no-print"></div>
+
+          <div class="report-page">
+            <div class="doc-header">
+              <img src="assets/images/brasao.png" alt="Brasão"/>
+              <p><strong>MINISTÉRIO DA DEFESA</strong></p>
+              </div>
+            <h3 class="doc-title">JUNTADA (DA DEFESA)</h3>
+            <div class="doc-body">
+              <p class="no-indent">1. {{ formatDateToWords(process.initial_statement_deadline) }}, nesta cidade de Sorocaba/SP... faço a juntada dos seguintes documentos:</p>
+              
+              <textarea 
+                class="editable-section" 
+                rows="10" 
+                placeholder="Digite os itens da defesa aqui..." 
+                [(ngModel)]="process.juntada_docs_2"
+              ></textarea>
+
+              <p class="no-indent" style="margin-top: 1cm;">2. Do que, para constar, lavrei o presente termo.</p>
+            </div>
+            <div class="mt-auto">
+              <div class="signature-block">
+                  <p>_________________________________________</p>
+                  <p><strong>SIMONE DE SOUZA CARVALHO – 3º Sargento</strong></p>
+                  <p>Encarregado do Processo</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+
+
+
+
+
       </div>
     </div>
+  </div>
+
+  <div *ngIf="isLoading" class="text-center p-5">
+    <p>Carregando dados do processo...</p>
   </div>
 </div>

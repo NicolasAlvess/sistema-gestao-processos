@@ -23,6 +23,7 @@ export interface Firearm {
   status: 'Apreendida' | 'Roubada' | 'OK';
 }
 export interface Process {
+  defesa_apresentada?: boolean;
   id: number;
   process_number: string;
   type: 'PAS' | 'PACCR';
@@ -70,6 +71,8 @@ export interface Process {
   juntada_docs_2?: string;
   relatorio_apreciacao_defesa?: string;
   relatorio_conclusao?: string;
+  
+   
 }
 export interface PaginatedProcesses {
   totalItems: number;
